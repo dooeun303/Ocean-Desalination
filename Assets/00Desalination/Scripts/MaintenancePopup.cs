@@ -1,0 +1,457 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.Networking;
+using TMPro;
+
+public class MaintenancePopup : MonoBehaviour
+{
+    // 패널
+    [Header("패널")]
+    public GameObject popupPanel;
+    public GameObject moveConfirmPanel;   // 설비로 이동 확인 알림
+    public GameObject saveConfirmPanel;   // 결과 저장 확인 알림
+    public GameObject resultAlertPanel;   // 저장 완료/실패 알림
+
+    // 텍스트
+    [Header("텍스트")]
+    public TMP_Text equipmentNameText;
+    public TMP_Text workTypeText;
+    public TMP_Text statusText;
+    public TMP_Text scheduledAtText;
+    public TMP_Text descriptionText;
+    public TMP_Text manualTitleText;
+    public TMP_Text alarmText;
+    public TMP_Text resultAlertText;      // 저장 완료/실패 메시지
+
+    [Header("완료 결과 조회")]
+    public GameObject resultSection;      // 완료된 경우 결과 표시 영역
+    public TMP_Text resultText;         // 작업 결과 텍스트
+    public TMP_Text aiSummaryText;      // AI 요약 텍스트
+
+    [Header("결과 선택 드롭다운")]
+    public TMP_Dropdown categoryDropdown;    // 대분류 드롭다운
+    public TMP_Dropdown subcategoryDropdown; // 소분류 드롭다운
+
+    // 버튼
+    [Header("버튼 - 시작 전")]
+    public Button startButton;            // 시작
+
+    [Header("버튼 - 시작 후")]
+    public Button completeButton;         // 완료
+    public Button videoCallButton;        // 화상통화
+
+    [Header("버튼 - 공통")]
+    public Button closeButton;            // 닫기
+
+    [Header("이동 확인 알림 버튼")]
+    public Button moveConfirmYesButton;   // 설비로 이동
+    public Button moveConfirmNoButton;    // 닫기
+
+    [Header("저장 확인 알림 버튼")]
+    public Button saveConfirmYesButton;   // 예
+    public Button saveConfirmNoButton;    // 아니오
+
+    // 서버 / XR
+    [Header("서버 주소")]
+    public string serverUrl = "http://192.168.0.66:3000/api/maintenance/";
+
+    [Header("XR Rig")]
+    public Transform xrRig;
+
+    [Header("이동 시 닫을 패널")]
+    public GameObject menuPanelToHide;           // 메뉴 패널
+    public GameObject maintenanceListPanelToHide; // 유지보수 리스트 패널
+
+    private MaintenanceData _data;
+    private List<ResultCategory> _categories = new List<ResultCategory>();
+    private string _selectedCategoryId = null;
+
+    void Start()
+    {
+        closeButton?.onClick.AddListener(OnCloseButton);
+        categoryDropdown?.onValueChanged.AddListener(OnCategoryChanged);
+        startButton?.onClick.AddListener(OnStartButton);
+        completeButton?.onClick.AddListener(OnCompleteButton);
+
+        moveConfirmYesButton?.onClick.AddListener(OnMoveConfirmYes);
+        moveConfirmNoButton?.onClick.AddListener(OnMoveConfirmNo);
+
+        saveConfirmYesButton?.onClick.AddListener(OnSaveConfirmYes);
+        saveConfirmNoButton?.onClick.AddListener(OnSaveConfirmNo);
+
+        popupPanel?.SetActive(false);
+        moveConfirmPanel?.SetActive(false);
+        saveConfirmPanel?.SetActive(false);
+        resultAlertPanel?.SetActive(false);
+    }
+
+    // 팝업 열기
+    public void Open(MaintenanceData data)
+    {
+        _data = data;
+
+        // 패널 먼저 활성화
+        popupPanel?.SetActive(true);
+        ResetDropdowns();
+        LoadCategories();
+        moveConfirmPanel?.SetActive(false);
+        saveConfirmPanel?.SetActive(false);
+        resultAlertPanel?.SetActive(false);
+        resultSection?.SetActive(false);
+
+        RefreshUI();
+    }
+
+    // UI 새로고침
+    void RefreshUI()
+    {
+        if (equipmentNameText) equipmentNameText.text = _data.equipment?.name ?? "-";
+        if (workTypeText) workTypeText.text = _data.work_type ?? "-";
+        if (statusText) statusText.text = _data.status switch
+        {
+            "scheduled" => "대기",
+            "in_progress" => "진행중",
+            "completed" => "완료",
+            "cancelled" => "취소",
+            _ => _data.status
+        };
+
+        if (scheduledAtText)
+        {
+            if (System.DateTime.TryParse(_data.scheduled_at, out System.DateTime dt))
+                scheduledAtText.text = dt.ToLocalTime().ToString("yyyy년 M월 d일 HH:mm");
+            else
+                scheduledAtText.text = _data.scheduled_at;
+        }
+
+        if (descriptionText) descriptionText.text = _data.description ?? "-";
+        if (manualTitleText) manualTitleText.text = _data.manual?.title ?? "매뉴얼 없음";
+        if (alarmText)
+        {
+            alarmText.text = _data.latest_alarm != null
+                ? $"[{_data.latest_alarm.severity}] {_data.latest_alarm.description}"
+                : "최근 알람 없음";
+        }
+
+        bool isCompleted = _data.status == "completed";
+        bool isPending = _data.status == "scheduled";
+
+        // 완료된 작업 — 결과 표시, 시작 버튼 숨기기
+        if (isCompleted)
+        {
+            // 완료 — 결과 표시, 드롭다운 숨기기
+            resultSection?.SetActive(true);
+            if (resultText) resultText.text = string.IsNullOrEmpty(_data.result) ? "-" : _data.result;
+            if (aiSummaryText) aiSummaryText.text = string.IsNullOrEmpty(_data.ai_summary) ? "AI 요약 없음" : _data.ai_summary;
+            categoryDropdown?.gameObject.SetActive(false);
+            subcategoryDropdown?.gameObject.SetActive(false);
+        }
+        else
+        {
+            // 미완료 — 드롭다운 표시, 결과 섹션 숨기기
+            resultSection?.SetActive(false);
+            categoryDropdown?.gameObject.SetActive(true);
+            subcategoryDropdown?.gameObject.SetActive(true);
+            ResetDropdowns();
+            LoadCategories();
+        }
+
+        // 버튼 상태
+        RefreshButtons(isStarted: !isPending && !isCompleted);
+    }
+
+    // 버튼 상태 전환
+    private void RefreshButtons(bool isStarted)
+    {
+        bool isCompleted = _data.status == "completed";
+
+        startButton?.gameObject.SetActive(!isStarted && !isCompleted);
+        completeButton?.gameObject.SetActive(isStarted);
+        videoCallButton?.gameObject.SetActive(isStarted);
+        // 닫기 버튼은 항상 표시
+    }
+
+    // 시작 버튼 → 이동 확인 알림
+    public void OnStartButton()
+    {
+        moveConfirmPanel?.SetActive(true);
+    }
+
+    // 이동 확인: 설비로 이동
+    public void OnMoveConfirmYes()
+    {
+        moveConfirmPanel?.SetActive(false);
+        MoveToEquipment();
+
+        // 메뉴 & 리스트 비활성화
+        menuPanelToHide?.SetActive(false);
+        maintenanceListPanelToHide?.SetActive(false);
+
+        _data.status = "in_progress";
+        RefreshButtons(isStarted: true);
+    }
+
+    // 이동 확인: 닫기
+    public void OnMoveConfirmNo()
+    {
+        moveConfirmPanel?.SetActive(false);
+    }
+
+    // 설비 위치로 이동
+    private void MoveToEquipment()
+    {
+        if (string.IsNullOrEmpty(_data?.equipment?.id))
+        {
+            Debug.LogWarning("[Maintenance] equipment_id 없음");
+            return;
+        }
+
+        EquipmentMarker[] markers = FindObjectsOfType<EquipmentMarker>();
+        foreach (var marker in markers)
+        {
+            if (marker.equipmentId == _data.equipment.id)
+            {
+                if (marker.teleportPoint != null)
+                {
+                    Transform targetPoint = marker.teleportPoint;
+                    Transform rig = xrRig;
+
+                    FadeController.Instance.StartCoroutine(
+                        FadeController.Instance.FadeAndTeleport(() =>
+                        {
+                            rig.position = targetPoint.position;
+                            rig.rotation = targetPoint.rotation;
+                        })
+                    );
+                }
+                else
+                    Debug.LogWarning("[Maintenance] 텔레포트 포인트 없음: " + marker.name);
+                return;
+            }
+        }
+        Debug.LogWarning("[Maintenance] 해당 equipment 못 찾음: " + _data.equipment.id);
+    }
+
+    // 완료 버튼 → 저장 확인 알림
+    public void OnCompleteButton()
+    {
+        saveConfirmPanel?.SetActive(true);
+    }
+
+    // 저장 확인: 예
+    public void OnSaveConfirmYes()
+    {
+        saveConfirmPanel?.SetActive(false);
+
+        // 녹음 종료 + 서버 전송
+        SummaryDisplay.Instance?.ShowLoading();
+        AudioRecorder.Instance?.StopAndSend(_data.id);
+
+        StartCoroutine(UpdateStatus("completed", GetSelectedResult()));
+    }
+
+    // 저장 확인: 아니오
+    public void OnSaveConfirmNo()
+    {
+        saveConfirmPanel?.SetActive(false);
+    }
+
+    // 닫기 버튼
+    public void OnCloseButton()
+    {
+        popupPanel?.SetActive(false);
+        moveConfirmPanel?.SetActive(false);
+        saveConfirmPanel?.SetActive(false);
+        resultAlertPanel?.SetActive(false);
+    }
+
+    // 화상통화 버튼
+    public void OnVideoCallButton()
+    {
+        Debug.Log("[Maintenance] 화상통화 시작 → maintenance_id: " + _data.id);
+        AudioRecorder.Instance?.StartRecording();
+        // TODO: 화상통화 스크립트 호출
+    }
+
+    // 상태 업데이트
+    IEnumerator UpdateStatus(string status, string result)
+    {
+        string url = serverUrl + _data.id;
+        string json = result != null
+            ? $"{{\"status\":\"{status}\",\"result\":\"{result}\"}}"
+            : $"{{\"status\":\"{status}\"}}";
+
+        UnityWebRequest req = new UnityWebRequest(url, "PATCH");
+        req.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+
+        yield return req.SendWebRequest();
+
+        if (req.result == UnityWebRequest.Result.Success)
+        {
+            Debug.Log("[Maintenance] 상태 업데이트 완료: " + status);
+            _data.status = status;
+            _data.result = result;
+            RefreshUI();
+            ShowResultAlert("저장이 완료되었습니다.");
+        }
+        else
+        {
+            Debug.LogError("[Maintenance] 업데이트 실패: " + req.error);
+            ShowResultAlert("저장에 실패했습니다. 다시 시도해주세요.");
+        }
+    }
+
+    // 드롭다운 초기화
+    private void ResetDropdowns()
+    {
+        if (categoryDropdown)
+        {
+            categoryDropdown.ClearOptions();
+            categoryDropdown.options.Add(new TMP_Dropdown.OptionData("대분류 선택"));
+        }
+        if (subcategoryDropdown)
+        {
+            subcategoryDropdown.ClearOptions();
+            subcategoryDropdown.options.Add(new TMP_Dropdown.OptionData("소분류 선택"));
+            subcategoryDropdown.interactable = false;
+        }
+        _selectedCategoryId = null;
+    }
+
+    // 대분류 목록 로드
+    private void LoadCategories()
+    {
+        StartCoroutine(FetchCategories());
+    }
+
+    private IEnumerator FetchCategories()
+    {
+        string url = serverUrl + "result-categories";
+        using var req = UnityWebRequest.Get(url);
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError("[Maintenance] 대분류 로드 실패: " + req.error);
+            yield break;
+        }
+
+        var response = JsonUtility.FromJson<ResultCategoryResponse>(req.downloadHandler.text);
+        if (!response.success || response.data == null) yield break;
+
+        _categories = new List<ResultCategory>(response.data);
+
+        if (categoryDropdown)
+        {
+            categoryDropdown.ClearOptions();
+            categoryDropdown.options.Add(new TMP_Dropdown.OptionData("대분류 선택"));
+            foreach (var cat in _categories)
+                categoryDropdown.options.Add(new TMP_Dropdown.OptionData(cat.name));
+            categoryDropdown.RefreshShownValue();
+        }
+    }
+
+    // 대분류 선택 시 소분류 로드
+    private void OnCategoryChanged(int index)
+    {
+        if (index == 0)
+        {
+            subcategoryDropdown.ClearOptions();
+            subcategoryDropdown.options.Add(new TMP_Dropdown.OptionData("소분류 선택"));
+            subcategoryDropdown.interactable = false;
+            subcategoryDropdown.RefreshShownValue();
+            _selectedCategoryId = null;
+            return;
+        }
+
+        if (_categories == null || index - 1 < 0 || index - 1 >= _categories.Count)
+        {
+            Debug.LogWarning("[Maintenance] Selected category is out of bounds or list is empty.");
+            subcategoryDropdown?.ClearOptions();
+            subcategoryDropdown?.options.Add(new TMP_Dropdown.OptionData("소분류 선택"));
+            if (subcategoryDropdown) subcategoryDropdown.interactable = false;
+            return;
+        }
+
+        var selected = _categories[index - 1]; // index 0은 "대분류 선택"이라서 -1
+        _selectedCategoryId = selected.id;
+        StartCoroutine(FetchSubcategories(selected.id));
+    }
+
+    private IEnumerator FetchSubcategories(string categoryId)
+    {
+        string url = serverUrl + "result-categories/" + categoryId + "/subcategories";
+        using var req = UnityWebRequest.Get(url);
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError("[Maintenance] 소분류 로드 실패: " + req.error);
+            yield break;
+        }
+
+        var response = JsonUtility.FromJson<ResultCategoryResponse>(req.downloadHandler.text);
+        if (!response.success || response.data == null) yield break;
+
+        if (subcategoryDropdown)
+        {
+            subcategoryDropdown.ClearOptions();
+            subcategoryDropdown.options.Add(new TMP_Dropdown.OptionData("소분류 선택"));
+            foreach (var sub in response.data)
+                subcategoryDropdown.options.Add(new TMP_Dropdown.OptionData(sub.name));
+            subcategoryDropdown.interactable = true;
+            subcategoryDropdown.RefreshShownValue();
+        }
+    }
+
+    // 선택된 결과 텍스트 반환
+    private string GetSelectedResult()
+    {
+        if (categoryDropdown == null || subcategoryDropdown == null) return "작업 완료";
+
+        int catIndex = categoryDropdown.value;
+        int subIndex = subcategoryDropdown.value;
+
+        if (catIndex == 0 || subIndex == 0) return "작업 완료";
+
+        string category = categoryDropdown.options[catIndex].text;
+        string subcategory = subcategoryDropdown.options[subIndex].text;
+        return $"{category} - {subcategory}";
+    }
+
+    // 저장 결과 알림 (3초 후 자동 닫힘)
+    private void ShowResultAlert(string message)
+    {
+        if (resultAlertText) resultAlertText.text = message;
+        resultAlertPanel?.SetActive(true);
+        StartCoroutine(AutoHideAlert());
+    }
+
+    private IEnumerator AutoHideAlert()
+    {
+        yield return new WaitForSeconds(3f); // 3초 기다림
+        resultAlertPanel?.SetActive(false);
+    }
+}
+
+
+// ─────────────────────────────────────────
+// 결과 카테고리 데이터 모델
+// ─────────────────────────────────────────
+[System.Serializable]
+public class ResultCategory
+{
+    public string id;
+    public string name;
+}
+
+[System.Serializable]
+public class ResultCategoryResponse
+{
+    public bool success;
+    public ResultCategory[] data;
+}

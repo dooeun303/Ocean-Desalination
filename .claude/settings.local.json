@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__unity-mcp-gateway__Unity_RunCommand",
+      "mcp__unity-mcp-gateway__Unity_SceneView_CaptureMultiAngleSceneView",
+      "mcp__unity-mcp-gateway__Unity_Camera_Capture",
+      "WebFetch(domain:spoonytripod.github.io)",
+      "mcp__unity-mcp-gateway__Unity_GetConsoleLogs"
+    ]
+  }
+}
