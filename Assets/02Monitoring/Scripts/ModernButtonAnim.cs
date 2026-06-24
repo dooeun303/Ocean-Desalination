@@ -31,6 +31,9 @@ public class ModernButtonAnim : MonoBehaviour, IPointerEnterHandler, IPointerExi
     private Color originalOutlineColor;
     private Color originalBgColor;
 
+    private bool isHovered = false;
+    private bool isPressed = false;
+
     // 호버 목표 색상 (#50B8B8)
     private Color hoverPrimaryColor = new Color32(80, 184, 184, 255); 
     // 아이콘 전용 호버 배경 (검정 6%)
@@ -77,6 +80,8 @@ public class ModernButtonAnim : MonoBehaviour, IPointerEnterHandler, IPointerExi
     void OnEnable()
     {
         transform.localScale = originalScale;
+        isHovered = false;
+        isPressed = false;
     }
 
     void OnDisable()
@@ -88,50 +93,71 @@ public class ModernButtonAnim : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     void ResetColors()
     {
+        isHovered = false;
+        isPressed = false;
         if (tmpText != null) { tmpText.DOKill(); tmpText.color = originalTextColor; }
         if (outline != null) { outline.DOKill(); outline.effectColor = originalOutlineColor; }
         if (bgImage != null) { bgImage.DOKill(); bgImage.color = originalBgColor; }
+    }
+
+    private void UpdateVisuals(bool immediate = false)
+    {
+        float duration = immediate ? 0f : 0.2f;
+        bool active = (isHovered || isPressed) && (btn == null || btn.interactable);
+
+        if (style == ModernButtonStyle.Basic)
+        {
+            Color targetColor = active ? hoverPrimaryColor : originalTextColor;
+            Color targetOutline = active ? hoverPrimaryColor : originalOutlineColor;
+
+            if (tmpText != null)
+            {
+                tmpText.DOKill();
+                if (immediate) tmpText.color = targetColor;
+                else tmpText.DOColor(targetColor, duration);
+            }
+            if (outline != null)
+            {
+                outline.DOKill();
+                if (immediate) outline.effectColor = targetOutline;
+                else outline.DOColor(targetOutline, duration);
+            }
+        }
+        else if (style == ModernButtonStyle.IconOnly)
+        {
+            Color targetBg = active ? hoverIconBgColor : originalBgColor;
+            if (bgImage != null)
+            {
+                bgImage.DOKill();
+                if (immediate) bgImage.color = targetBg;
+                else bgImage.DOColor(targetBg, duration);
+            }
+        }
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (btn != null && !btn.interactable) return;
         
-        // 스케일 업 제거 (가이드라인 준수)
-        
-        // 호버 색상 변경
-        if (style == ModernButtonStyle.Basic)
-        {
-            if (tmpText != null) { tmpText.DOKill(); tmpText.DOColor(hoverPrimaryColor, 0.2f); }
-            if (outline != null) { outline.DOKill(); outline.DOColor(hoverPrimaryColor, 0.2f); }
-        }
-        else if (style == ModernButtonStyle.IconOnly)
-        {
-            if (bgImage != null) { bgImage.DOKill(); bgImage.DOColor(hoverIconBgColor, 0.2f); }
-        }
-        // Primary 버튼의 그림자(Shadow) 호버 처리는 별도의 하위 오브젝트나 Material이 필요하여 생략 또는 추후 연결
+        isHovered = true;
+        UpdateVisuals();
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         if (btn != null && !btn.interactable) return;
 
-        // 색상 원상복구
-        if (style == ModernButtonStyle.Basic)
-        {
-            if (tmpText != null) { tmpText.DOKill(); tmpText.DOColor(originalTextColor, 0.2f); }
-            if (outline != null) { outline.DOKill(); outline.DOColor(originalOutlineColor, 0.2f); }
-        }
-        else if (style == ModernButtonStyle.IconOnly)
-        {
-            if (bgImage != null) { bgImage.DOKill(); bgImage.DOColor(originalBgColor, 0.2f); }
-        }
+        isHovered = false;
+        UpdateVisuals();
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         if (btn != null && !btn.interactable) return;
         
+        isPressed = true;
+        UpdateVisuals();
+
         // 버튼 누를 때만 스케일 다운 (0.98배)
         transform.DOKill();
         transform.DOScale(originalScale * 0.98f, 0.1f).SetEase(Ease.OutQuad);
@@ -141,6 +167,9 @@ public class ModernButtonAnim : MonoBehaviour, IPointerEnterHandler, IPointerExi
     {
         if (btn != null && !btn.interactable) return;
         
+        isPressed = false;
+        UpdateVisuals();
+
         // 뗄 때 원래 크기로 복구 (1.0배)
         transform.DOKill();
         transform.DOScale(originalScale, 0.25f).SetEase(Ease.OutBack);
