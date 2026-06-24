@@ -68,7 +68,7 @@ public class Monitoring3UIStyleApplier : EditorWindow
                 // 카드 내부 패딩 추가 (텍스트가 테두리에 붙지 않도록)
                 VerticalLayoutGroup cardLayout = img.gameObject.GetComponent<VerticalLayoutGroup>();
                 if (cardLayout == null) cardLayout = img.gameObject.AddComponent<VerticalLayoutGroup>();
-                cardLayout.padding = new RectOffset(20, 20, 20, 20);
+                cardLayout.padding = new RectOffset(20, 20, 18, 18);
                 cardLayout.childAlignment = TextAnchor.UpperLeft;
                 cardLayout.childControlHeight = true;
                 cardLayout.childControlWidth = true;

@@ -162,7 +162,7 @@ public class Monitoring3UIBuilder : EditorWindow
 
         VerticalLayoutGroup cardVlg = targetCard.GetComponent<VerticalLayoutGroup>();
         if (cardVlg == null) cardVlg = targetCard.gameObject.AddComponent<VerticalLayoutGroup>();
-        cardVlg.padding = new RectOffset(20, 20, 20, 20);
+        cardVlg.padding = new RectOffset(20, 20, 18, 18);
         cardVlg.spacing = 15;
         cardVlg.childAlignment = TextAnchor.UpperLeft;
         cardVlg.childControlHeight = true;
@@ -442,7 +442,7 @@ public class Monitoring3UIBuilder : EditorWindow
         // Configure targetCard layout
         VerticalLayoutGroup cardVlg = targetCard.GetComponent<VerticalLayoutGroup>();
         if (cardVlg == null) cardVlg = targetCard.gameObject.AddComponent<VerticalLayoutGroup>();
-        cardVlg.padding = new RectOffset(20, 20, 20, 20);
+        cardVlg.padding = new RectOffset(20, 20, 18, 18);
         cardVlg.spacing = 20;
         cardVlg.childAlignment = TextAnchor.UpperLeft;
         cardVlg.childControlHeight = true;
@@ -1446,7 +1446,7 @@ public class Monitoring3UIBuilder : EditorWindow
             outline.effectDistance = new Vector2(0, -2f);
 
             VerticalLayoutGroup cardLayout = card.AddComponent<VerticalLayoutGroup>();
-            cardLayout.padding = new RectOffset(20, 20, 20, 20);
+            cardLayout.padding = new RectOffset(20, 20, 18, 18);
             cardLayout.spacing = 10;
             cardLayout.childAlignment = TextAnchor.UpperLeft;
             cardLayout.childControlHeight = true;
@@ -2429,7 +2429,7 @@ public class Monitoring3UIBuilder : EditorWindow
         cardOut.effectDistance = new Vector2(0, -1f);
 
         VerticalLayoutGroup cardVlg = cardGo.AddComponent<VerticalLayoutGroup>();
-        cardVlg.padding = new RectOffset(20, 20, 20, 20);
+        cardVlg.padding = new RectOffset(20, 20, 18, 18);
         cardVlg.spacing = 15;
         cardVlg.childControlWidth = true;
         cardVlg.childControlHeight = true;
