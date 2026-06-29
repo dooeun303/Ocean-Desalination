@@ -1,21 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Npgsql;
 
 public class MaintenanceKPI : MonoBehaviour, IPageRefreshable
 {
-    [Header("DB 접속 설정")]
-    public string host = "127.0.0.1";
-    public int port = 5433;
-    public string database = "test";
-    public string user = "postgres";
-    public string password = "0000";
-    public string schema = "aaa";
-
     [Header("KPI 카드 UI")]
     public KPICardUI cardTotal = new KPICardUI();
     public KPICardUI cardInProgress = new KPICardUI();
@@ -65,25 +57,6 @@ public class MaintenanceKPI : MonoBehaviour, IPageRefreshable
         }
     }
 
-    private string GetConnectionString()
-    {
-        string h = (host ?? "").ToLowerInvariant() == "localhost" ? "127.0.0.1" : host;
-        var builder = new NpgsqlConnectionStringBuilder
-        {
-            Host = h,
-            Port = port,
-            Database = database,
-            Username = user,
-            Password = password,
-            SearchPath = schema,
-            SslMode = SslMode.Disable,
-            Timeout = 15,
-            CommandTimeout = 15,
-            ServerCompatibilityMode = ServerCompatibilityMode.NoTypeLoading
-        };
-        return builder.ConnectionString;
-    }
-
     private IEnumerator FetchAndUpdate()
     {
         int activeYear = 2026;
@@ -95,93 +68,70 @@ public class MaintenanceKPI : MonoBehaviour, IPageRefreshable
         int completedThisMonth = 0;
         int activeCriticalAlarms = 0;
 
-        bool success = false;
-        string errorMsg = "";
-
-        var thread = System.Threading.Tasks.Task.Run(() =>
+        // 1. Get the month with maximum maintenance logs
+        var counts = new Dictionary<string, int>();
+        foreach (var r in MonitoringMockDataStore.Maintenances)
         {
-            try
+            string key = $"{r.ScheduledAt.Year}-{r.ScheduledAt.Month}";
+            if (!counts.ContainsKey(key)) counts[key] = 0;
+            counts[key]++;
+        }
+
+        string maxKey = null;
+        int maxCnt = -1;
+        foreach (var kvp in counts)
+        {
+            if (kvp.Value > maxCnt)
             {
-                using (var conn = new NpgsqlConnection(GetConnectionString()))
+                maxCnt = kvp.Value;
+                maxKey = kvp.Key;
+            }
+        }
+
+        if (maxKey != null)
+        {
+            var parts = maxKey.Split('-');
+            activeYear = int.Parse(parts[0]);
+            activeMonth = int.Parse(parts[1]);
+        }
+
+        // Calculate previous month dynamically
+        DateTime targetDate = new DateTime(activeYear, activeMonth, 1);
+        DateTime prevDate = targetDate.AddMonths(-1);
+        int lastYear = prevDate.Year;
+        int lastMonth = prevDate.Month;
+
+        foreach (var r in MonitoringMockDataStore.Maintenances)
+        {
+            if (r.ScheduledAt.Year == activeYear && r.ScheduledAt.Month == activeMonth)
+            {
+                totalThisMonth++;
+                string status = (r.Status ?? "").ToLowerInvariant();
+                if (status == "in_progress")
                 {
-                    conn.Open();
-
-                    // 1. Get the month with maximum maintenance logs
-                    string activeMonthSql = @"
-SELECT EXTRACT(YEAR FROM maintenance_scheduled_at) as yr, EXTRACT(MONTH FROM maintenance_scheduled_at) as mon, COUNT(*) as cnt
-FROM maintenance
-GROUP BY yr, mon
-ORDER BY cnt DESC
-LIMIT 1;";
-                    using (var cmd = new NpgsqlCommand(activeMonthSql, conn))
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            activeYear = (int)reader.GetDouble(0);
-                            activeMonth = (int)reader.GetDouble(1);
-                        }
-                    }
-
-                    // Calculate previous month dynamically
-                    DateTime targetDate = new DateTime(activeYear, activeMonth, 1);
-                    DateTime prevDate = targetDate.AddMonths(-1);
-                    int lastYear = prevDate.Year;
-                    int lastMonth = prevDate.Month;
-
-                    // 2. Get counts for active month and last month
-                    string countsSql = @"
-SELECT COUNT(CASE WHEN EXTRACT(YEAR FROM maintenance_scheduled_at) = @activeYear AND EXTRACT(MONTH FROM maintenance_scheduled_at) = @activeMonth THEN 1 END) as total_this,
-       COUNT(CASE WHEN EXTRACT(YEAR FROM maintenance_scheduled_at) = @lastYear AND EXTRACT(MONTH FROM maintenance_scheduled_at) = @lastMonth THEN 1 END) as total_last,
-       COUNT(CASE WHEN EXTRACT(YEAR FROM maintenance_scheduled_at) = @activeYear AND EXTRACT(MONTH FROM maintenance_scheduled_at) = @activeMonth AND maintenance_status = 'in_progress' THEN 1 END) as progress_this,
-       COUNT(CASE WHEN EXTRACT(YEAR FROM maintenance_scheduled_at) = @activeYear AND EXTRACT(MONTH FROM maintenance_scheduled_at) = @activeMonth AND maintenance_status = 'completed' THEN 1 END) as completed_this
-FROM maintenance;";
-
-                    using (var cmd = new NpgsqlCommand(countsSql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("activeYear", activeYear);
-                        cmd.Parameters.AddWithValue("activeMonth", activeMonth);
-                        cmd.Parameters.AddWithValue("lastYear", lastYear);
-                        cmd.Parameters.AddWithValue("lastMonth", lastMonth);
-
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                totalThisMonth = reader.GetInt32(0);
-                                totalLastMonth = reader.GetInt32(1);
-                                inProgressThisMonth = reader.GetInt32(2);
-                                completedThisMonth = reader.GetInt32(3);
-                            }
-                        }
-                    }
-
-                    // 3. Get active critical alarms to calculate uptime
-                    string alarmSql = "SELECT COUNT(*) FROM alarm WHERE alarm_severity = 'critical' AND alarm_is_active = true;";
-                    using (var cmd = new NpgsqlCommand(alarmSql, conn))
-                    {
-                        activeCriticalAlarms = Convert.ToInt32(cmd.ExecuteScalar());
-                    }
-
-                    success = true;
+                    inProgressThisMonth++;
+                }
+                else if (status == "completed")
+                {
+                    completedThisMonth++;
                 }
             }
-            catch (Exception ex)
+            else if (r.ScheduledAt.Year == lastYear && r.ScheduledAt.Month == lastMonth)
             {
-                errorMsg = ex.Message;
+                totalLastMonth++;
             }
-        });
-
-        while (!thread.IsCompleted)
-        {
-            yield return null;
         }
 
-        if (!success)
+        // 3. Get active critical alarms to calculate uptime
+        foreach (var r in MonitoringMockDataStore.Alarms)
         {
-            Debug.LogError($"[MaintenanceKPI] DB Error: {errorMsg}");
-            yield break;
+            if (r.IsActive && (r.Severity ?? "").ToLowerInvariant() == "critical")
+            {
+                activeCriticalAlarms++;
+            }
         }
+
+        yield return null;
 
         int diff = totalThisMonth - totalLastMonth;
         string diffSign = diff >= 0 ? "+" : "";

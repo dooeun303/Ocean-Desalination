@@ -1,21 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Npgsql;
 
 public class FaultPredictionKPIs : MonoBehaviour, IPageRefreshable
 {
-    [Header("DB 접속 설정")]
-    public string host = "127.0.0.1";
-    public int port = 5433;
-    public string database = "test";
-    public string user = "postgres";
-    public string password = "0000";
-    public string schema = "aaa";
-
     [Header("KPI 카드 UI")]
     public KPICardUI cardActive = new KPICardUI();
     public KPICardUI cardReleased = new KPICardUI();
@@ -60,25 +52,6 @@ public class FaultPredictionKPIs : MonoBehaviour, IPageRefreshable
         }
     }
 
-    private string GetConnectionString()
-    {
-        string h = (host ?? "").ToLowerInvariant() == "localhost" ? "127.0.0.1" : host;
-        var builder = new NpgsqlConnectionStringBuilder
-        {
-            Host = h,
-            Port = port,
-            Database = database,
-            Username = user,
-            Password = password,
-            SearchPath = schema,
-            SslMode = SslMode.Disable,
-            Timeout = 15,
-            CommandTimeout = 15,
-            ServerCompatibilityMode = ServerCompatibilityMode.NoTypeLoading
-        };
-        return builder.ConnectionString;
-    }
-
     private IEnumerator FetchAndUpdate()
     {
         int activeCount = 0;
@@ -86,54 +59,24 @@ public class FaultPredictionKPIs : MonoBehaviour, IPageRefreshable
         int releasedCount = 0;
         int totalCount = 0;
 
-        bool success = false;
-        string errorMsg = "";
-
-        var thread = System.Threading.Tasks.Task.Run(() =>
+        foreach (var r in MonitoringMockDataStore.Alarms)
         {
-            try
+            totalCount++;
+            if (r.IsActive)
             {
-                using (var conn = new NpgsqlConnection(GetConnectionString()))
+                activeCount++;
+                if ((r.Severity ?? "").ToLowerInvariant() == "critical")
                 {
-                    conn.Open();
-
-                    string sql = @"
-SELECT COUNT(CASE WHEN alarm_is_active = true THEN 1 END),
-       COUNT(CASE WHEN alarm_is_active = true AND alarm_severity = 'critical' THEN 1 END),
-       COUNT(CASE WHEN alarm_is_active = false THEN 1 END),
-       COUNT(*)
-FROM alarm;";
-                    
-                    using (var cmd = new NpgsqlCommand(sql, conn))
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            activeCount = reader.GetInt32(0);
-                            criticalCount = reader.GetInt32(1);
-                            releasedCount = reader.GetInt32(2);
-                            totalCount = reader.GetInt32(3);
-                        }
-                    }
-                    success = true;
+                    criticalCount++;
                 }
             }
-            catch (Exception ex)
+            else
             {
-                errorMsg = ex.Message;
+                releasedCount++;
             }
-        });
-
-        while (!thread.IsCompleted)
-        {
-            yield return null;
         }
 
-        if (!success)
-        {
-            Debug.LogError($"[FaultPredictionKPIs] DB Error: {errorMsg}");
-            yield break;
-        }
+        yield return null;
 
         float activeRatio = totalCount > 0 ? (float)activeCount / totalCount : 0f;
         float releasedRatio = totalCount > 0 ? (float)releasedCount / totalCount : 0f;

@@ -6,22 +6,11 @@ using XCharts.Runtime;
 
 public class RemoteInspectionBarChart : MonoBehaviour, IPageRefreshable
 {
-    [Header("DB 접속 설정")]
-    public string host = "127.0.0.1";
-    public int port = 5433;
-    public string database = "test";
-    public string user = "postgres";
-    public string password = "0000";
-    public string schema = "aaa";
-
     [Header("차트")]
     public BarChart chart;
 
-    private PostgresInspectionService _dbService;
-
     public void OnPageRefresh()
     {
-        if (_dbService == null) _dbService = new PostgresInspectionService(host, port, database, user, password, schema);
         _ = FetchAndDraw();
     }
 
@@ -35,31 +24,29 @@ public class RemoteInspectionBarChart : MonoBehaviour, IPageRefreshable
     {
         try
         {
-            if (_dbService == null) _dbService = new PostgresInspectionService(host, port, database, user, password, schema);
-            List<InspectionRecord> records = await _dbService.SearchInspectionsAsync("");
+            List<InspectionRecord> records = await MonitoringMockDataStore.SearchInspections("");
             DrawChart(records);
         }
         catch (Exception e)
         {
-            Debug.LogError($"[RemoteInspectionBarChart] DB 조회 실패: {e.Message}");
+            Debug.LogError($"[RemoteInspectionBarChart] Mock 조회 실패: {e.Message}");
         }
     }
 
     void DrawChart(List<InspectionRecord> items)
     {
         if (chart == null) return;
-        Dictionary<string, int> inspectorCounts = new Dictionary<string, int>();
-        foreach (var item in items)
-        {
-            string name = string.IsNullOrEmpty(item.InspectorName) ? "미지정" : item.InspectorName;
-            if (!inspectorCounts.ContainsKey(name)) inspectorCounts[name] = 0;
-            inspectorCounts[name]++;
-        }
+        
         chart.ClearData();
-        foreach (var kvp in inspectorCounts)
+        
+        // 임의의 점검자별 담당 점검 수치 추가
+        string[] inspectors = { "김철수", "이영희", "박민수", "최다혜" };
+        int[] counts = { 8, 11, 6, 5 };
+
+        for (int i = 0; i < inspectors.Length; i++)
         {
-            chart.AddYAxisData(kvp.Key);
-            chart.AddData(0, kvp.Value);
+            chart.AddYAxisData(inspectors[i]);
+            chart.AddData(0, counts[i]);
         }
     }
 }

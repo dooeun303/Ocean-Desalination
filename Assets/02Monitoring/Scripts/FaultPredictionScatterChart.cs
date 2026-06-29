@@ -5,26 +5,12 @@ using XCharts.Runtime;
 
 public class FaultPredictionScatterChart : MonoBehaviour, IPageRefreshable
 {
-    [Header("DB 연동 설정")]
-    [SerializeField] private string host = "127.0.0.1";
-    [SerializeField] private int port = 5432;
-    [SerializeField] private string database = "postgres";
-    [SerializeField] private string user = "postgres";
-    [SerializeField] private string password = "password";
-    [SerializeField] private string schema = "aaa";
-
     [Header("차트 및 테마 색상")]
     [SerializeField] private ScatterChart chart;
     [SerializeField] private Color normalColor = new Color32(0x50, 0xB8, 0xB8, 0xFF); // 청록색
 
-    private PostgresAlarmService _service;
-
     public void OnPageRefresh()
     {
-        if (_service == null)
-        {
-            _service = new PostgresAlarmService(host, port, database, user, password, schema);
-        }
         _ = FetchAndDraw();
     }
 
@@ -40,38 +26,34 @@ public class FaultPredictionScatterChart : MonoBehaviour, IPageRefreshable
     {
         try
         {
-            List<AlarmRecord> records = await _service.SearchAlarmsAsync("");
+            List<AlarmRecord> records = await MonitoringMockDataStore.SearchAlarms("");
             DrawChart(records);
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[FaultPredictionScatterChart] DB 조회 실패: {e.Message}");
+            Debug.LogError($"[FaultPredictionScatterChart] Mock 조회 실패: {e.Message}");
         }
     }
 
     private void DrawChart(List<AlarmRecord> records)
     {
         if (chart == null) return;
-        if (records == null || records.Count == 0)
-        {
-            chart.ClearData();
-            return;
-        }
 
         chart.theme.colorPalette.Clear();
         chart.theme.colorPalette.Add(normalColor);
 
         chart.ClearData();
-        foreach (var r in records)
+        
+        // 임의의 산점도 데이터 채우기 (X축: 시간, Y축: 심각도)
+        float[,] dummyPoints = {
+            { 2.5f, 1f }, { 4.2f, 2f }, { 6.8f, 1f }, { 8.5f, 3f }, { 10.1f, 1f },
+            { 11.5f, 2f }, { 13.0f, 1f }, { 14.5f, 3f }, { 16.2f, 2f }, { 18.0f, 1f },
+            { 19.8f, 1f }, { 21.5f, 2f }, { 23.0f, 1f }
+        };
+        
+        for (int i = 0; i < dummyPoints.GetLength(0); i++)
         {
-            float xHour = r.TriggeredAt.Hour + (r.TriggeredAt.Minute / 60f);
-            float ySeverity = 1f; // 정상
-            
-            string sev = (r.Severity ?? "").ToLowerInvariant();
-            if (sev == "critical") ySeverity = 3f;
-            else if (sev == "warning") ySeverity = 2f;
-
-            chart.AddData(0, xHour, ySeverity);
+            chart.AddData(0, dummyPoints[i, 0], dummyPoints[i, 1]);
         }
     }
 }

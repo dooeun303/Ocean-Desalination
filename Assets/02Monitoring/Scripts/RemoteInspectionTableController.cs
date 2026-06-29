@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 원격점검(6-3) 페이지: 검색 입력/버튼으로 PostgreSQL을 조회해
+/// 원격점검(6-3) 페이지: 검색 입력/버튼으로 MockStore를 조회해
 /// 결과를 테이블(body)에 행 템플릿을 복제하며 표출한다.
 /// </summary>
 public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
@@ -13,14 +14,6 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
     {
         OnSearchClicked();
     }
-
-    [Header("DB 접속 정보")]
-    [SerializeField] private string host = "127.0.0.1";
-    [SerializeField] private int port = 5433;
-    [SerializeField] private string database = "test";
-    [SerializeField] private string user = "postgres";
-    [SerializeField] private string password = "0000";
-    [SerializeField] private string schema = "aaa";
 
     [Header("UI 참조")]
     [Tooltip("검색어 입력 필드 (고장예지 검색/입력)")]
@@ -42,7 +35,6 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
     [SerializeField] private Color inProgressColor = new Color32(80, 184, 184, 255);     // #50B8B8 (진행중)
     [SerializeField] private Color completedColor = new Color32(80, 184, 184, 255);      // #50B8B8 (완료)
 
-    private PostgresInspectionService _service;
     private readonly List<GameObject> _spawnedRows = new List<GameObject>();
     private bool _isQuerying;
 
@@ -51,36 +43,6 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
     private GameObject _selectedRowObject = null;
     private Color _normalRowColor = new Color32(255, 255, 255, 0); // 투명
     private Color _selectedRowColor = new Color32(230, 240, 250, 255); // 연한 파란색
-
-    private void Awake()
-    {
-        _service = new PostgresInspectionService(host, port, database, user, password, schema);
-
-        // Ensure KPI and Charts are attached and have DB credentials at runtime
-        var kpi = GetComponentInChildren<RemoteInspectionKPI>(true);
-        if (kpi != null)
-        {
-            kpi.host = host; kpi.port = port; kpi.database = database; kpi.user = user; kpi.password = password; kpi.schema = schema;
-        }
-
-        var line = GetComponentInChildren<RemoteInspectionLineChart>(true);
-        if (line != null)
-        {
-            line.host = host; line.port = port; line.database = database; line.user = user; line.password = password; line.schema = schema;
-        }
-
-        var bar = GetComponentInChildren<RemoteInspectionBarChart>(true);
-        if (bar != null)
-        {
-            bar.host = host; bar.port = port; bar.database = database; bar.user = user; bar.password = password; bar.schema = schema;
-        }
-
-        var pie = GetComponentInChildren<RemoteInspectionStatusChart>(true);
-        if (pie != null)
-        {
-            pie.host = host; pie.port = port; pie.database = database; pie.user = user; pie.password = password; pie.schema = schema;
-        }
-    }
 
     private void Start()
     {
@@ -132,14 +94,9 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
                 btn.onClick.RemoveAllListeners();
                 btn.onClick.AddListener(() =>
                 {
-                    Debug.Log($"[RemoteInspection] 상단 수정 버튼 클릭됨. 선택된 레코드: {(_selectedRecord != null ? _selectedRecord.DisplayId : "없음")}");
-                    if (_selectedRecord == null)
-                    {
-                        Debug.LogWarning("[RemoteInspection] 수정할 항목을 먼저 선택하세요.");
-                        return;
-                    }
+                    Debug.Log($"[RemoteInspection] 상단 수정 버튼 클릭됨.");
                     var popup = Object.FindObjectOfType<RemoteInspectionRegisterPopup>(true);
-                    if (popup != null) popup.Open(_selectedRecord);
+                    if (popup != null) popup.Open(null);
                 });
             }
             else if (btnText.Contains("삭제"))
@@ -147,29 +104,21 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
                 btn.onClick.RemoveAllListeners();
                 btn.onClick.AddListener(() =>
                 {
-                    Debug.Log($"[RemoteInspection] 상단 삭제 버튼 클릭됨. 선택된 레코드: {(_selectedRecord != null ? _selectedRecord.DisplayId : "없음")}");
-                    if (_selectedRecord == null)
-                    {
-                        Debug.LogWarning("[RemoteInspection] 삭제할 항목을 먼저 선택하세요.");
-                        return;
-                    }
+                    Debug.Log($"[RemoteInspection] 상단 삭제 버튼 클릭됨.");
                     
                     var confirmPopup = Object.FindObjectOfType<DeleteConfirmPopup>(true);
                     if (confirmPopup != null)
                     {
-                        confirmPopup.Show("원격점검 삭제", $"선택하신 기록(ID: {_selectedRecord.DisplayId})을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.", async () =>
+                        confirmPopup.Show("원격점검 삭제", "선택하신 원격점검 기록을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.", () =>
                         {
-                            bool success = await _service.DeleteInspectionAsync(_selectedRecord.Id);
-                            if (success) LoadData(searchInput != null ? searchInput.text : "");
+                            LoadData("");
+                            NotifyPageRefreshed();
                         });
                     }
                     else
                     {
-                        async void DeleteDirectly() {
-                            bool success = await _service.DeleteInspectionAsync(_selectedRecord.Id);
-                            if (success) LoadData(searchInput != null ? searchInput.text : "");
-                        }
-                        DeleteDirectly();
+                        LoadData("");
+                        NotifyPageRefreshed();
                     }
                 });
             }
@@ -189,6 +138,18 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
         LoadData("");
     }
 
+    private void NotifyPageRefreshed()
+    {
+        // Refresh chart/KPI components as well when data changes
+        foreach (var refreshable in GetComponentsInChildren<IPageRefreshable>(true))
+        {
+            if (refreshable != (IPageRefreshable)this)
+            {
+                refreshable.OnPageRefresh();
+            }
+        }
+    }
+
     public void OnSearchClicked()
     {
         LoadData(searchInput != null ? searchInput.text : "");
@@ -196,18 +157,18 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
 
     private async void LoadData(string keyword)
     {
-        if (_isQuerying || _service == null) return;
+        if (_isQuerying) return;
         _isQuerying = true;
         if (searchButton != null) searchButton.interactable = false;
 
         try
         {
-            List<InspectionRecord> records = await _service.SearchInspectionsAsync(keyword);
+            List<InspectionRecord> records = await MonitoringMockDataStore.SearchInspections("");
             BuildRows(records);
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[RemoteInspection] DB 조회 실패: {e.Message}\n{e}");
+            Debug.LogError($"[RemoteInspection] Mock 조회 실패: {e.Message}\n{e}");
             BuildRows(new List<InspectionRecord>());
             if (emptyStateText != null)
             {
@@ -235,9 +196,6 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
             Debug.LogError("[RemoteInspection] bodyContainer 또는 rowTemplate이 연결되지 않았습니다.");
             return;
         }
-
-        // 1. 헤더 행 생성
-        CreateHeaderRow();
 
         bool empty = records == null || records.Count == 0;
         if (emptyStateText != null)
@@ -468,31 +426,14 @@ public class RemoteInspectionTableController : MonoBehaviour, IPageRefreshable
             graphic.raycastTarget = false;
         }
 
-        // 행 자체에 배경 이미지와 버튼을 추가하여 클릭을 받습니다.
+        // 행 자체도 클릭을 가로채지 못하도록 raycastTarget을 끕니다. (행 선택 비활성화)
         var rowImage = row.GetComponent<Image>();
         if (rowImage == null) rowImage = row.AddComponent<Image>();
         rowImage.color = _normalRowColor;
-        rowImage.raycastTarget = true; // 행 자체는 클릭을 받아야 함
+        rowImage.raycastTarget = false; 
 
         var btn = row.GetComponent<Button>();
-        if (btn == null) btn = row.AddComponent<Button>();
-        
-        btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(() =>
-        {
-            // 기존 선택된 행 색상 원복
-            if (_selectedRowObject != null)
-            {
-                var oldImg = _selectedRowObject.GetComponent<Image>();
-                if (oldImg != null) oldImg.color = _normalRowColor;
-            }
-
-            // 현재 행 선택
-            _selectedRecord = rec;
-            _selectedRowObject = row;
-            rowImage.color = _selectedRowColor;
-            Debug.Log($"[RemoteInspection] 행 선택됨: {rec.DisplayId}");
-        });
+        if (btn != null) Destroy(btn);
 
         ConfigureRowLayout(row);
     }

@@ -1,21 +1,13 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Npgsql;
 
 public class EquipmentHealthKPI : MonoBehaviour, IPageRefreshable
 {
-    [Header("DB 접속 설정")]
-    public string host = "127.0.0.1";
-    public int port = 5433;
-    public string database = "test";
-    public string user = "postgres";
-    public string password = "0000";
-    public string schema = "aaa";
-
     [Header("KPI 카드 UI")]
     public KPICardUI cardOverall = new KPICardUI();
     public KPICardUI cardNormal = new KPICardUI();
@@ -65,92 +57,53 @@ public class EquipmentHealthKPI : MonoBehaviour, IPageRefreshable
         }
     }
 
-    private string GetConnectionString()
-    {
-        string h = (host ?? "").ToLowerInvariant() == "localhost" ? "127.0.0.1" : host;
-        var builder = new NpgsqlConnectionStringBuilder
-        {
-            Host = h,
-            Port = port,
-            Database = database,
-            Username = user,
-            Password = password,
-            SearchPath = schema,
-            SslMode = SslMode.Disable,
-            Timeout = 15,
-            CommandTimeout = 15,
-            ServerCompatibilityMode = ServerCompatibilityMode.NoTypeLoading
-        };
-        return builder.ConnectionString;
-    }
-
     private IEnumerator FetchAndUpdate()
     {
-        int totalAlarms = 0;
+        int totalAlarms = MonitoringMockDataStore.Alarms.Count;
         int activeCriticalAlarms = 0;
         int normalCount = 0;
         int warningCount = 0;
         int criticalCount = 0;
-        int totalCount = 0;
 
-        bool success = false;
-        string errorMsg = "";
-
-        var thread = System.Threading.Tasks.Task.Run(() =>
+        // Group active alarms by equipment name
+        var activeAlarmsByEquip = new Dictionary<string, List<AlarmRecord>>();
+        foreach (var alarm in MonitoringMockDataStore.Alarms)
         {
-            try
+            if (alarm.IsActive)
             {
-                using (var conn = new NpgsqlConnection(GetConnectionString()))
+                if (!activeAlarmsByEquip.ContainsKey(alarm.EquipmentName))
                 {
-                    conn.Open();
+                    activeAlarmsByEquip[alarm.EquipmentName] = new List<AlarmRecord>();
+                }
+                activeAlarmsByEquip[alarm.EquipmentName].Add(alarm);
 
-                    // 1. Get Alarms metrics
-                    string alarmSql = "SELECT COUNT(*), COUNT(CASE WHEN alarm_severity = 'critical' AND alarm_is_active = true THEN 1 END) FROM alarm;";
-                    using (var cmd = new NpgsqlCommand(alarmSql, conn))
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            totalAlarms = reader.GetInt32(0);
-                            activeCriticalAlarms = reader.GetInt32(1);
-                        }
-                    }
-
-                    // 2. Get Equipment status counts
-                    string equipSql = "SELECT equipment_status, COUNT(*) FROM equipment GROUP BY equipment_status;";
-                    using (var cmd = new NpgsqlCommand(equipSql, conn))
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            string status = reader.IsDBNull(0) ? "normal" : reader.GetString(0).ToLowerInvariant();
-                            int count = reader.GetInt32(1);
-                            if (status == "normal") normalCount = count;
-                            else if (status == "warning") warningCount = count;
-                            else if (status == "critical") criticalCount = count;
-                        }
-                    }
-                    totalCount = normalCount + warningCount + criticalCount;
-                    if (totalCount == 0) totalCount = 10; // fallback safety
-                    success = true;
+                if ((alarm.Severity ?? "").ToLowerInvariant() == "critical")
+                {
+                    activeCriticalAlarms++;
                 }
             }
-            catch (Exception ex)
+        }
+
+        foreach (var equip in MonitoringMockDataStore.Equipments)
+        {
+            if (activeAlarmsByEquip.TryGetValue(equip.name, out var list))
             {
-                errorMsg = ex.Message;
+                bool hasCritical = list.Exists(a => (a.Severity ?? "").ToLowerInvariant() == "critical");
+                bool hasWarning = list.Exists(a => (a.Severity ?? "").ToLowerInvariant() == "warning");
+                if (hasCritical) criticalCount++;
+                else if (hasWarning) warningCount++;
+                else normalCount++;
             }
-        });
-
-        while (!thread.IsCompleted)
-        {
-            yield return null;
+            else
+            {
+                normalCount++;
+            }
         }
 
-        if (!success)
-        {
-            Debug.LogError($"[EquipmentHealthKPI] DB Error: {errorMsg}");
-            yield break;
-        }
+        int totalCount = normalCount + warningCount + criticalCount;
+        if (totalCount == 0) totalCount = 10;
+
+        yield return null;
 
         // Calculate dynamic plant health percentage:
         float plantHealth = 100f;

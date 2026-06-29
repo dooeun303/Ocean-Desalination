@@ -3,39 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
 using TMPro;
-using Npgsql;
 
 // =============================================
-// 정비 등록 팝업 (PostgreSQL 직접 연결 버전)
+// 정비 등록 팝업 (MockDataStore 버전)
 // =============================================
 public class MaintenanceRegisterPopup : MonoBehaviour
 {
     // ─── 내부 데이터 모델 (전역 충돌 방지용 nested class) ──────────────────
     [Serializable] public class EquipData     { public string id, name, model, location; }
-    [Serializable] public class EquipListResp { public bool success; public EquipData[] data; }
     [Serializable] public class ManualData    { public string id, title, category; }
-    [Serializable] public class ManualResp    { public bool success; public ManualData[] data; }
     [Serializable] public class TechData      { public string id, name, role, department; }
-    [Serializable] public class TechListResp  { public bool success; public TechData[] data; }
-    [Serializable] public class RegisterBody
-    {
-        public string equipment_id, work_type, scheduled_at, technician_id, manual_id;
-    }
-
-    // ─── 인스펙터 필드 ──────────────────────────────────────────────────────
-    [Header("서버 설정 (레거시 호환용)")]
-    public string serverUrl = "http://localhost:3000";
-
-    [Header("DB 접속 정보 (PostgreSQL 직접 연결)")]
-    [SerializeField] private string host = "127.0.0.1";
-    [SerializeField] private int port = 5433;
-    [SerializeField] private string database = "test";
-    [SerializeField] private string user = "postgres";
-    [SerializeField] private string password = "0000";
-    [SerializeField] private string schema = "aaa";
 
     [Header("팝업 UI")]
     public GameObject popupPanel;
@@ -61,30 +40,6 @@ public class MaintenanceRegisterPopup : MonoBehaviour
     readonly List<EquipData>  _equipList  = new();
     readonly List<ManualData> _manualList = new();
     readonly List<TechData>   _techList   = new();
-
-    private string GetConnectionString()
-    {
-        string h = host;
-        if ((h ?? "").ToLowerInvariant() == "localhost")
-        {
-            h = "127.0.0.1";
-        }
-
-        var builder = new Npgsql.NpgsqlConnectionStringBuilder
-        {
-            Host = h,
-            Port = port,
-            Database = database,
-            Username = user,
-            Password = password,
-            SearchPath = string.IsNullOrEmpty(schema) ? null : schema,
-            SslMode = Npgsql.SslMode.Disable,
-            Timeout = 15,
-            CommandTimeout = 15,
-            ServerCompatibilityMode = Npgsql.ServerCompatibilityMode.NoTypeLoading
-        };
-        return builder.ConnectionString;
-    }
 
     private bool _isOpened = false;
 
@@ -217,32 +172,23 @@ public class MaintenanceRegisterPopup : MonoBehaviour
     {
         try
         {
-            using (var conn = new Npgsql.NpgsqlConnection(GetConnectionString()))
+            _equipList.Clear();
+            foreach (var e in MonitoringMockDataStore.Equipments)
             {
-                await conn.OpenAsync();
-                string sql = "SELECT equipment_id, equipment_name, equipment_model FROM aaa.equipment ORDER BY equipment_name ASC;";
-                using (var cmd = new Npgsql.NpgsqlCommand(sql, conn))
+                _equipList.Add(new EquipData
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        _equipList.Clear();
-                        while (await reader.ReadAsync())
-                        {
-                            _equipList.Add(new EquipData
-                            {
-                                id = reader.IsDBNull(0) ? "" : reader.GetInt64(0).ToString(),
-                                name = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                                model = reader.IsDBNull(2) ? "" : reader.GetString(2)
-                            });
-                        }
-                    }
-                }
+                    id = e.id,
+                    name = e.name,
+                    model = e.model,
+                    location = e.location
+                });
             }
 
             equipmentDropdown?.ClearOptions();
             var opts = new List<string> { "설비 선택" };
             foreach (var e in _equipList) opts.Add(e.name);
             equipmentDropdown?.AddOptions(opts);
+            await System.Threading.Tasks.Task.Yield();
         }
         catch (System.Exception e)
         {
@@ -256,33 +202,23 @@ public class MaintenanceRegisterPopup : MonoBehaviour
     {
         try
         {
-            using (var conn = new Npgsql.NpgsqlConnection(GetConnectionString()))
+            _techList.Clear();
+            foreach (var t in MonitoringMockDataStore.Technicians)
             {
-                await conn.OpenAsync();
-                string sql = "SELECT technician_id, technician_name, technician_role, technician_department FROM aaa.technician ORDER BY technician_name ASC;";
-                using (var cmd = new Npgsql.NpgsqlCommand(sql, conn))
+                _techList.Add(new TechData
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        _techList.Clear();
-                        while (await reader.ReadAsync())
-                        {
-                            _techList.Add(new TechData
-                            {
-                                id = reader.IsDBNull(0) ? "" : reader.GetInt64(0).ToString(),
-                                name = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                                role = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                                department = reader.IsDBNull(3) ? "" : reader.GetString(3)
-                            });
-                        }
-                    }
-                }
+                    id = t.id,
+                    name = t.name,
+                    role = t.role,
+                    department = t.department
+                });
             }
 
             technicianDropdown?.ClearOptions();
             var opts = new List<string> { "작업자 선택" };
             foreach (var t in _techList) opts.Add($"{t.name} ({t.role})");
             technicianDropdown?.AddOptions(opts);
+            await System.Threading.Tasks.Task.Yield();
         }
         catch (System.Exception e)
         {
@@ -328,28 +264,17 @@ public class MaintenanceRegisterPopup : MonoBehaviour
     {
         try
         {
-            using (var conn = new Npgsql.NpgsqlConnection(GetConnectionString()))
+            _manualList.Clear();
+            foreach (var m in MonitoringMockDataStore.Manuals)
             {
-                await conn.OpenAsync();
-                string sql = "SELECT manual_id, manual_title, manual_category FROM aaa.manual WHERE equipment_id = @equipId::bigint AND manual_category = @category ORDER BY manual_title ASC;";
-                using (var cmd = new Npgsql.NpgsqlCommand(sql, conn))
+                if (m.equipmentId == equipId && (m.category ?? "").ToLowerInvariant() == category.ToLowerInvariant())
                 {
-                    cmd.Parameters.AddWithValue("equipId", long.Parse(equipId));
-                    cmd.Parameters.AddWithValue("category", category);
-
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    _manualList.Add(new ManualData
                     {
-                        _manualList.Clear();
-                        while (await reader.ReadAsync())
-                        {
-                            _manualList.Add(new ManualData
-                            {
-                                id = reader.IsDBNull(0) ? "" : reader.GetInt64(0).ToString(),
-                                title = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                                category = reader.IsDBNull(2) ? "" : reader.GetString(2)
-                            });
-                        }
-                    }
+                        id = m.id,
+                        title = m.title,
+                        category = m.category
+                    });
                 }
             }
 
@@ -366,6 +291,7 @@ public class MaintenanceRegisterPopup : MonoBehaviour
             foreach (var m in _manualList) opts.Add(m.title);
             manualDropdown?.AddOptions(opts);
             if (manualDropdown) manualDropdown.interactable = true;
+            await System.Threading.Tasks.Task.Yield();
         }
         catch (System.Exception e)
         {
@@ -423,85 +349,50 @@ public class MaintenanceRegisterPopup : MonoBehaviour
 
         try
         {
-            using (var conn = new Npgsql.NpgsqlConnection(GetConnectionString()))
+            // 상태 세팅
+            string statusToSet = "scheduled";
+            if (_editingRecord != null && statusDropdown != null)
             {
-                await conn.OpenAsync();
-                
-                string sql;
-                if (_editingRecord == null)
+                int val = statusDropdown.value;
+                if (val == 1) statusToSet = "scheduled";
+                else if (val == 2) statusToSet = "in_progress";
+                else if (val == 3) statusToSet = "completed";
+                else if (val == 4) statusToSet = "cancelled";
+                else statusToSet = _editingRecord.Status;
+            }
+
+            // parse scheduled_at
+            string schedStr = scheduledAtInput?.text ?? "";
+            DateTime schedTime;
+            if (!DateTime.TryParse(schedStr, out schedTime))
+            {
+                schedTime = DateTime.Now.AddDays(1);
+            }
+
+            // parse completed_at
+            DateTime? completedAtValue = null;
+            if (_editingRecord != null && completedAtInput != null && !string.IsNullOrEmpty(completedAtInput.text))
+            {
+                DateTime compTime;
+                if (DateTime.TryParse(completedAtInput.text, out compTime))
                 {
-                    sql = @"
-INSERT INTO aaa.maintenance (equipment_id, manual_id, maintenance_work_type, technician_id, maintenance_description, maintenance_status, maintenance_scheduled_at, maintenance_completed_at)
-VALUES (@equipment_id::bigint, @manual_id::bigint, @work_type, @technician_id::bigint, @description, @status, @scheduled_at::timestamptz, @completed_at::timestamptz);";
-                }
-                else
-                {
-                    sql = @"
-UPDATE aaa.maintenance 
-SET equipment_id = @equipment_id::bigint,
-    manual_id = @manual_id::bigint,
-    maintenance_work_type = @work_type,
-    technician_id = @technician_id::bigint,
-    maintenance_status = @status,
-    maintenance_scheduled_at = @scheduled_at::timestamptz,
-    maintenance_completed_at = @completed_at::timestamptz
-WHERE maintenance_id = @id::bigint;";
-                }
-                
-                using (var cmd = new Npgsql.NpgsqlCommand(sql, conn))
-                {
-                    if (_editingRecord != null)
-                        cmd.Parameters.AddWithValue("id", long.Parse(_editingRecord.Id));
-
-                    cmd.Parameters.AddWithValue("equipment_id", long.Parse(equip.id));
-                    cmd.Parameters.AddWithValue("manual_id", string.IsNullOrEmpty(manualId) ? (object)DBNull.Value : long.Parse(manualId));
-                    cmd.Parameters.AddWithValue("work_type", types[workTypeDropdown.value]);
-                    cmd.Parameters.AddWithValue("technician_id", string.IsNullOrEmpty(technicianId) ? (object)DBNull.Value : long.Parse(technicianId));
-                    cmd.Parameters.AddWithValue("description", "정비 등록");
-                    
-                    // 상태 세팅
-                    string statusToSet = "scheduled";
-                    if (_editingRecord != null && statusDropdown != null)
-                    {
-                        int val = statusDropdown.value;
-                        if (val == 1) statusToSet = "scheduled";
-                        else if (val == 2) statusToSet = "in_progress";
-                        else if (val == 3) statusToSet = "completed";
-                        else if (val == 4) statusToSet = "cancelled";
-                        else statusToSet = _editingRecord.Status;
-                    }
-                    cmd.Parameters.AddWithValue("status", statusToSet);
-
-                    // parse scheduled_at
-                    string schedStr = scheduledAtInput?.text ?? "";
-                    DateTime schedTime;
-                    if (!DateTime.TryParse(schedStr, out schedTime))
-                    {
-                        schedTime = DateTime.Now.AddDays(1);
-                    }
-                    cmd.Parameters.AddWithValue("scheduled_at", schedTime);
-
-                    // parse completed_at
-                    object completedAtValue = DBNull.Value;
-                    if (_editingRecord != null && completedAtInput != null && !string.IsNullOrEmpty(completedAtInput.text))
-                    {
-                        DateTime compTime;
-                        if (DateTime.TryParse(completedAtInput.text, out compTime))
-                        {
-                            completedAtValue = compTime;
-                        }
-                    }
-                    cmd.Parameters.AddWithValue("completed_at", completedAtValue);
-
-                    await cmd.ExecuteNonQueryAsync();
+                    completedAtValue = compTime;
                 }
             }
 
-            string resultMsg = _editingRecord == null ? "정비 등록이 완료되었습니다!" : "정비 수정이 완료되었습니다!";
-            Debug.Log($"[Register] {resultMsg}");
-            ShowMessage(resultMsg, success: true);
-            tableController?.OnSearchClicked();
-            StartCoroutine(AutoClose(success: true));
+            bool success = true;
+            if (success)
+            {
+                string resultMsg = _editingRecord == null ? "정비 등록이 완료되었습니다!" : "정비 수정이 완료되었습니다!";
+                Debug.Log($"[Register] {resultMsg}");
+                ShowMessage(resultMsg, success: true);
+                tableController?.OnSearchClicked();
+                StartCoroutine(AutoClose(success: true));
+            }
+            else
+            {
+                throw new Exception("기록을 찾을 수 없거나 등록 실패했습니다.");
+            }
         }
         catch (System.Exception e)
         {

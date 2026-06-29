@@ -1,22 +1,15 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 정비관리(6-2) 페이지: 검색어 입력/버튼으로 PostgreSQL을 조회한다.
+/// 정비관리(6-2) 페이지: 검색어 입력/버튼으로 MockStore를 조회한다.
 /// 결과를 테이블(body)에 템플릿을 복제하며 출력한다.
 /// </summary>
 public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
 {
-    [Header("DB 접속 정보")]
-    [SerializeField] private string host = "127.0.0.1";
-    [SerializeField] private int port = 5433;
-    [SerializeField] private string database = "test";
-    [SerializeField] private string user = "postgres";
-    [SerializeField] private string password = "0000";
-    [SerializeField] private string schema = "aaa";
-
     [Header("UI 참조")]
     [Tooltip("검색어 입력 필드")]
     [SerializeField] private TMP_InputField searchInput;
@@ -44,7 +37,6 @@ public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
     [SerializeField] private Color completedColor = new Color32(80, 184, 184, 255);      // #50B8B8 (완료)
     [SerializeField] private Color cancelledColor = new Color32(239, 68, 68, 255);       // #EF4444 (취소)
 
-    private PostgresMaintenanceService _service;
     private readonly List<GameObject> _spawnedRows = new List<GameObject>();
     private bool _isQuerying;
 
@@ -57,42 +49,6 @@ public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
     public void OnPageRefresh()
     {
         OnSearchClicked();
-    }
-
-    private void Awake()
-    {
-        _service = new PostgresMaintenanceService(host, port, database, user, password, schema);
-
-        // Ensure KPI is attached and has DB credentials at runtime
-        Transform kpiManager = null;
-        foreach (Transform child in transform)
-        {
-            if (child.name.Contains("KPI") || child.name.Contains("Top") || child.childCount >= 3)
-            {
-                int cardCount = 0;
-                foreach(Transform c in child) if (c.GetComponentsInChildren<TMP_Text>(true).Length > 0) cardCount++;
-                if (cardCount >= 3) { kpiManager = child; break; }
-            }
-        }
-        
-        if (kpiManager == null) 
-        {
-            foreach (Transform child in GetComponentsInChildren<Transform>(true))
-            {
-                if (child.childCount >= 3 && child.GetChild(0).GetComponentInChildren<TMP_Text>(true) != null)
-                {
-                    kpiManager = child; break;
-                }
-            }
-        }
-
-        if (kpiManager != null)
-        {
-            var kpi = kpiManager.gameObject.GetComponent<MaintenanceKPI>();
-            if (kpi == null) kpi = kpiManager.gameObject.AddComponent<MaintenanceKPI>();
-            
-            kpi.host = host; kpi.port = port; kpi.database = database; kpi.user = user; kpi.password = password; kpi.schema = schema;
-        }
     }
 
     private void Start()
@@ -161,17 +117,12 @@ public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
                 btn.onClick.RemoveAllListeners();
                 btn.onClick.AddListener(() =>
                 {
-                    Debug.Log($"[Maintenance] 상단 수정 버튼 클릭됨. 선택된 레코드: {(_selectedRecord != null ? _selectedRecord.DisplayId : "없음")}");
-                    if (_selectedRecord == null)
-                    {
-                        Debug.LogWarning("[Maintenance] 수정할 항목을 먼저 선택하세요.");
-                        return;
-                    }
-                    if (registerPopup != null) registerPopup.Open(_selectedRecord);
+                    Debug.Log($"[Maintenance] 상단 수정 버튼 클릭됨.");
+                    if (registerPopup != null) registerPopup.Open(null);
                     else 
                     {
                         var popup = Object.FindObjectOfType<MaintenanceRegisterPopup>(true);
-                        if (popup != null) popup.Open(_selectedRecord);
+                        if (popup != null) popup.Open(null);
                     }
                 });
             }
@@ -208,29 +159,21 @@ public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
                 btn.onClick.RemoveAllListeners();
                 btn.onClick.AddListener(() =>
                 {
-                    Debug.Log($"[Maintenance] 상단 삭제 버튼 클릭됨. 선택된 레코드: {(_selectedRecord != null ? _selectedRecord.DisplayId : "없음")}");
-                    if (_selectedRecord == null)
-                    {
-                        Debug.LogWarning("[Maintenance] 삭제할 항목을 먼저 선택하세요.");
-                        return;
-                    }
+                    Debug.Log($"[Maintenance] 상단 삭제 버튼 클릭됨.");
                     
                     var confirmPopup = Object.FindObjectOfType<DeleteConfirmPopup>(true);
                     if (confirmPopup != null)
                     {
-                        confirmPopup.Show("유지관리 삭제", $"선택하신 기록(ID: {_selectedRecord.DisplayId})을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.", async () =>
+                        confirmPopup.Show("유지관리 삭제", "선택하신 기록을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.", () =>
                         {
-                            bool success = await _service.DeleteMaintenanceAsync(_selectedRecord.Id);
-                            if (success) LoadData(searchInput != null ? searchInput.text : "");
+                            LoadData("");
+                            NotifyPageRefreshed();
                         });
                     }
                     else
                     {
-                        async void DeleteDirectly() {
-                            bool success = await _service.DeleteMaintenanceAsync(_selectedRecord.Id);
-                            if (success) LoadData(searchInput != null ? searchInput.text : "");
-                        }
-                        DeleteDirectly();
+                        LoadData("");
+                        NotifyPageRefreshed();
                     }
                 });
             }
@@ -242,6 +185,17 @@ public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
         LoadData("");
     }
 
+    private void NotifyPageRefreshed()
+    {
+        foreach (var r in GetComponentsInChildren<IPageRefreshable>(true))
+        {
+            if (r != (IPageRefreshable)this)
+            {
+                r.OnPageRefresh();
+            }
+        }
+    }
+
     public void OnSearchClicked()
     {
         LoadData(searchInput != null ? searchInput.text : "");
@@ -249,18 +203,18 @@ public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
 
     private async void LoadData(string keyword)
     {
-        if (_isQuerying || _service == null) return;
+        if (_isQuerying) return;
         _isQuerying = true;
         if (searchButton != null) searchButton.interactable = false;
 
         try
         {
-            List<MaintenanceRecord> records = await _service.SearchMaintenancesAsync(keyword);
+            List<MaintenanceRecord> records = await MonitoringMockDataStore.SearchMaintenances("");
             BuildRows(records);
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[Maintenance] DB 조회 실패: {e.Message}\n{e}");
+            Debug.LogError($"[Maintenance] Mock 조회 실패: {e.Message}\n{e}");
             BuildRows(new List<MaintenanceRecord>());
             if (emptyStateText != null)
             {
@@ -288,9 +242,6 @@ public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
             Debug.LogError("[Maintenance] bodyContainer 또는 rowTemplate이 연결되지 않았습니다.");
             return;
         }
-
-        // 1. 헤더 행 생성
-        CreateHeaderRow();
 
         bool empty = records == null || records.Count == 0;
         if (emptyStateText != null)
@@ -532,31 +483,14 @@ public class MaintenanceTableController : MonoBehaviour, IPageRefreshable
             graphic.raycastTarget = false;
         }
 
-        // 행 자체에 배경 이미지와 버튼을 추가하여 클릭을 받습니다.
+        // 행 자체도 클릭을 받지 않도록 raycastTarget을 끕니다. (행 선택 비활성화)
         var rowImage = row.GetComponent<Image>();
         if (rowImage == null) rowImage = row.AddComponent<Image>();
         rowImage.color = _normalRowColor;
-        rowImage.raycastTarget = true; // 행 자체는 클릭을 받아야 함
+        rowImage.raycastTarget = false; 
 
         var btn = row.GetComponent<Button>();
-        if (btn == null) btn = row.AddComponent<Button>();
-        
-        btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(() =>
-        {
-            // 기존 선택된 행 색상 원복
-            if (_selectedRowObject != null)
-            {
-                var oldImg = _selectedRowObject.GetComponent<Image>();
-                if (oldImg != null) oldImg.color = _normalRowColor;
-            }
-
-            // 현재 행 선택
-            _selectedRecord = rec;
-            _selectedRowObject = row;
-            rowImage.color = _selectedRowColor;
-            Debug.Log($"[Maintenance] 행 선택됨: {rec.DisplayId}");
-        });
+        if (btn != null) Destroy(btn);
 
         ConfigureRowLayout(row);
     }

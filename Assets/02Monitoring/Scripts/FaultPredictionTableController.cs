@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 고장예지(6-1) 페이지: 검색 입력/버튼으로 PostgreSQL을 조회해
+/// 고장예지(6-1) 페이지: 검색 입력/버튼으로 MockStore를 조회해
 /// 결과를 테이블(body)에 행 템플릿을 복제하며 표출한다.
 /// </summary>
 public class FaultPredictionTableController : MonoBehaviour, IPageRefreshable
@@ -13,14 +14,6 @@ public class FaultPredictionTableController : MonoBehaviour, IPageRefreshable
     {
         OnSearchClicked();
     }
-
-    [Header("DB 접속 정보")]
-    [SerializeField] private string host = "127.0.0.1";
-    [SerializeField] private int port = 5433;
-    [SerializeField] private string database = "test";
-    [SerializeField] private string user = "postgres";
-    [SerializeField] private string password = "0000";
-    [SerializeField] private string schema = "aaa";
 
     [Header("UI 참조")]
     [Tooltip("검색어 입력 필드 (고장예지 검색/입력)")]
@@ -44,14 +37,8 @@ public class FaultPredictionTableController : MonoBehaviour, IPageRefreshable
     [SerializeField] private Color normalColor = new Color32(0x50, 0xB8, 0xB8, 0xFF);   // 정상
     [SerializeField] private Color releasedColor = new Color32(0x5F, 0x6F, 0x85, 0xFF); // 해제
 
-    private PostgresAlarmService _service;
     private readonly List<GameObject> _spawnedRows = new List<GameObject>();
     private bool _isQuerying;
-
-    private void Awake()
-    {
-        _service = new PostgresAlarmService(host, port, database, user, password, schema);
-    }
 
     private void Start()
     {
@@ -91,18 +78,18 @@ public class FaultPredictionTableController : MonoBehaviour, IPageRefreshable
 
     private async void LoadData(string keyword)
     {
-        if (_isQuerying || _service == null) return;
+        if (_isQuerying) return;
         _isQuerying = true;
         if (searchButton != null) searchButton.interactable = false;
 
         try
         {
-            List<AlarmRecord> records = await _service.SearchAlarmsAsync(keyword);
+            List<AlarmRecord> records = await MonitoringMockDataStore.SearchAlarms("");
             BuildRows(records);
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[FaultPrediction] DB 조회 실패: {e.Message}\n{e}");
+            Debug.LogError($"[FaultPrediction] Mock 조회 실패: {e.Message}\n{e}");
             BuildRows(new List<AlarmRecord>());
             if (emptyStateText != null)
             {
@@ -129,9 +116,6 @@ public class FaultPredictionTableController : MonoBehaviour, IPageRefreshable
             Debug.LogError("[FaultPrediction] bodyContainer 또는 rowTemplate이 연결되지 않았습니다.");
             return;
         }
-
-        // 1. 컬럼 헤더 행 생성
-        CreateHeaderRow();
 
         bool empty = records == null || records.Count == 0;
         if (emptyStateText != null)
