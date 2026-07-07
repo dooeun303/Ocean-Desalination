@@ -5,7 +5,10 @@
       "mcp__unity-mcp-gateway__Unity_SceneView_CaptureMultiAngleSceneView",
       "mcp__unity-mcp-gateway__Unity_Camera_Capture",
       "WebFetch(domain:spoonytripod.github.io)",
-      "mcp__unity-mcp-gateway__Unity_GetConsoleLogs"
+      "mcp__unity-mcp-gateway__Unity_GetConsoleLogs",
+      "Bash(git -C D:\\\\UnityProject\\\\Unity_new_version log --oneline -10)",
+      "PowerShell(git -C \"D:\\\\UnityProject\\\\Unity_new_version\" log --oneline -10)",
+      "mcp__visualize__show_widget"
     ]
   }
 }
