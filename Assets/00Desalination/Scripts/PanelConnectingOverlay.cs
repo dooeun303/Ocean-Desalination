@@ -1,33 +1,26 @@
-using System.Collections;
 using UnityEngine;
-using UnityEngine.Video;
 
 // 화상통화_일반 패널에 붙는 스크립트
-// 패널이 켜질 때마다(SetActive(true)) 일정 시간 로딩 스피너(+ 연결중 영상)를 먼저 보여줌
+// 패널이 켜지면(SetActive(true)) 오버레이(배경+스피너)를 띄워두고,
+// 실제로 AR 영상이 연결되면(JoinChannelVideoToken이 HideOverlay 호출) 사라진다.
 public class PanelConnectingOverlay : MonoBehaviour
 {
-    public GameObject connectingSpinner;       // 배경 + 스피너 + 영상을 담은 오브젝트
-    public VideoPlayer connectingVideoPlayer;  // 연결중 영상 재생용 (선택)
-    public float delaySeconds = 3f;
+    public GameObject connectingSpinner; // 배경 + 스피너를 담은 오브젝트
 
     void OnEnable()
     {
-        StartCoroutine(ShowSpinner());
+        ShowOverlay();
     }
 
-    void OnDisable()
-    {
-        connectingVideoPlayer?.Stop();
-    }
-
-    private IEnumerator ShowSpinner()
+    // 패널이 열릴 때 오버레이(연결 대기 화면)를 보여줌
+    public void ShowOverlay()
     {
         connectingSpinner?.SetActive(true);
+    }
 
-        yield return new WaitForSeconds(delaySeconds);
-
-        // 스피너가 사라진 뒤 영상 재생 시작
+    // 실제로 상대방(AR) 영상이 연결되면 호출 → 오버레이 숨김
+    public void HideOverlay()
+    {
         connectingSpinner?.SetActive(false);
-        connectingVideoPlayer?.Play();
     }
 }

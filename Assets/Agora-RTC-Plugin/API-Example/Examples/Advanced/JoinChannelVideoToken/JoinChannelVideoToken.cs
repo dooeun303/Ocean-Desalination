@@ -744,6 +744,9 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
         {
             _owner.DebugState($"상대방이 들어왔습니다 (연결됨)");
             JoinChannelVideoToken.MakeVideoView(uid, connection.channelId, _owner.remoteVideoContainer);
+
+            // 실제 영상이 연결됐으니 "연결 대기중" 오버레이는 숨김
+            _owner.GetComponent<PanelConnectingOverlay>()?.HideOverlay();
         }
 
         // 타 유저 오프라인시 → 상대방이 나감
@@ -751,6 +754,9 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
         {
             _owner.DebugState($"상대방이 나갔습니다");
             JoinChannelVideoToken.DestroyVideoView(uid);
+
+            // 상대방이 나갔으니 다시 "연결 대기중" 오버레이 표시
+            _owner.GetComponent<PanelConnectingOverlay>()?.ShowOverlay();
         }
 
         // 연결 상태 변화시 → 시도중/연결됨/끊김 등을 화면에 알기 쉽게 표시
