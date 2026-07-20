@@ -14,7 +14,7 @@ public class VideoSlotManager : MonoBehaviour
         Instance = this;
     }
 
-    // ½½·Ô ÇÒ´ç
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½Ò´ï¿½
     public Transform AssignSlot(uint uid)
     {
         if (userSlotMap.ContainsKey(uid))
@@ -33,7 +33,7 @@ public class VideoSlotManager : MonoBehaviour
         return null;
     }
 
-    // ½½·Ô ÇØÁ¦ (?)
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (?)
     public void ReleaseSlot(uint uid)
     {
         if (!userSlotMap.TryGetValue(uid, out var slot))

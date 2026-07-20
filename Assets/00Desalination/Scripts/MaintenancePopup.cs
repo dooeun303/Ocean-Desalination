@@ -64,6 +64,9 @@ public class MaintenancePopup : MonoBehaviour
     public GameObject menuPanelToHide;           // 메뉴 패널
     public GameObject maintenanceListPanelToHide; // 유지보수 리스트 패널
 
+    [Header("화상통화")]
+    public GameObject videoCallPanel;            // 화상통화 패널 (JoinChannelVideoToken 붙어있는 오브젝트)
+
     private MaintenanceData _data;
     private List<ResultCategory> _categories = new List<ResultCategory>();
     private string _selectedCategoryId = null;
@@ -85,6 +88,14 @@ public class MaintenancePopup : MonoBehaviour
         moveConfirmPanel?.SetActive(false);
         saveConfirmPanel?.SetActive(false);
         resultAlertPanel?.SetActive(false);
+
+        // 화상통화 거절 이벤트 구독
+        VideoCallSignalingMR.OnCallRejected += OnVideoCallRejected;
+    }
+
+    void OnDestroy()
+    {
+        VideoCallSignalingMR.OnCallRejected -= OnVideoCallRejected;
     }
 
     // 팝업 열기
@@ -268,11 +279,23 @@ public class MaintenancePopup : MonoBehaviour
     }
 
     // 화상통화 버튼
+    // videoCallPanel은 켜두되(엔진 준비용), 실제 채널 join은 AR이 수락한 뒤에 일어남
     public void OnVideoCallButton()
     {
-        Debug.Log("[Maintenance] 화상통화 시작 → maintenance_id: " + _data.id);
+        Debug.Log("[Maintenance] 화상통화 요청 → maintenance_id: " + _data.id);
         AudioRecorder.Instance?.StartRecording();
-        // TODO: 화상통화 스크립트 호출
+        videoCallPanel?.SetActive(true);
+        VideoCallSignalingMR.Instance?.RequestCall(_data.id);
+    }
+
+    // 화상통화 거절됨 → 대기 중이던 패널 닫기
+    private void OnVideoCallRejected(string channelName)
+    {
+        if (_data != null && channelName == _data.id)
+        {
+            Debug.Log("[Maintenance] 화상통화 거절됨: " + channelName);
+            videoCallPanel?.SetActive(false);
+        }
     }
 
     // 상태 업데이트

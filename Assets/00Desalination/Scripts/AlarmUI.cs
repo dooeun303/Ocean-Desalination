@@ -21,11 +21,35 @@ public class AlarmUI : MonoBehaviour
     [Header("XR Rig")]
     public Transform xrRig; // ← 인스펙터에서 XR Origin (XR Rig) 연결
 
+    [Header("데모/테스트용 알람 (버튼 연결)")]
+    public string demoEquipmentId;                 // 테스트할 설비의 EquipmentMarker.equipmentId와 동일하게 설정
+    public string demoEquipmentName = "펌프 P-101";
+    public string demoDescription = "진동 및 온도 이상 패턴이 감지되어 고장 가능성이 높습니다.";
+    public string demoSeverity = "warning"; // critical / warning / info
+
     private string _currentEquipmentId; // 현 알람의 equipment_id
 
     // 알람 웹 소켓에서 알람을 받음이 확인되면 ShowAlarm()을 실행함
     void OnEnable() => AlarmWebSocket.OnAlarmReceived += ShowAlarm;
     void OnDisable() => AlarmWebSocket.OnAlarmReceived -= ShowAlarm;
+
+    // 버튼에서 직접 호출하는 테스트/데모용 알람 트리거 (서버 웹소켓 없이 발생)
+    public void TriggerDemoAlarm()
+    {
+        var demoAlarm = new AlarmData
+        {
+            type = "ALARM",
+            alarm_id = "demo",
+            alarm_code = "demo",
+            severity = demoSeverity,
+            description = demoDescription,
+            triggered_at = DateTime.Now.ToString("o"),
+            equipment = new EquipmentData { id = demoEquipmentId, name = demoEquipmentName },
+            mr_space_id = ""
+        };
+
+        ShowAlarm(demoAlarm);
+    }
 
     /// <summary>
     /// 알람보기

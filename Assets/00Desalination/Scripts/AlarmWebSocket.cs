@@ -74,17 +74,17 @@ public class AlarmWebSocket : MonoBehaviour
         }
     }
 
-    public void Send(string message)
+    public bool Send(string message)
     {
         if (ws != null && ws.ReadyState == WebSocketState.Open)
         {
             ws.Send(message);
             Debug.Log("[WS] 전송: " + message);
+            return true;
         }
-        else
-        {
-            Debug.LogWarning("[WS] 전송 실패 — 연결 안 됨");
-        }
+
+        Debug.LogWarning("[WS] 전송 실패 — 연결 안 됨");
+        return false;
     }
 
     void OnDestroy()
