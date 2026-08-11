@@ -9496,7 +9496,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &183847808
 RectTransform:
   m_ObjectHideFlags: 0
@@ -9511,10 +9511,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 245753444}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 40, y: -20}
-  m_SizeDelta: {x: 80, y: 40}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &183847809
 MonoBehaviour:
@@ -13741,7 +13741,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 183847808}
-  - {fileID: 1616796427}
   - {fileID: 1712964771}
   m_Father: {fileID: 958994741}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -13764,7 +13763,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   slots:
   - {fileID: 183847808}
-  - {fileID: 1616796427}
+  - {fileID: 0}
 --- !u!114 &245753446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22727,7 +22726,7 @@ MonoBehaviour:
   _tokenServerUrl: http://192.168.0.66:3000
   DebugWebCamPreview: {fileID: 0}
   DebugStateText: {fileID: 196316077}
-  remoteVideoContainer: {fileID: 0}
+  remoteVideoContainer: {fileID: 183847808}
   LogText: {fileID: 219228348}
 --- !u!114 &413034131
 MonoBehaviour:
@@ -22818,14 +22817,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 413034124}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c31efe52c787d3d4d8a6e024e5accdbf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PanelConnectingOverlay
   connectingSpinner: {fileID: 1712964767}
-  connectingVideoPlayer: {fileID: 0}
-  delaySeconds: 5
 --- !u!224 &413535678 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3543782816528414378, guid: f6451e392094dc14481baba8763cb99d, type: 3}
@@ -54005,6 +54002,7 @@ GameObject:
   - component: {fileID: 958994745}
   - component: {fileID: 958994744}
   - component: {fileID: 958994743}
+  - component: {fileID: 958994746}
   m_Layer: 5
   m_Name: Image
   m_TagString: Untagged
@@ -54100,6 +54098,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 958994740}
   m_CullTransparentMesh: 1
+--- !u!114 &958994746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 958994740}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 448d8f0546eeb934e954e2e24c280823, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DropZone
+  dropZoneImage: {fileID: 0}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  highlightColor: {r: 0.3, g: 0.7, b: 1, a: 0.09}
+  alertPanel: {fileID: 0}
+  alertText: {fileID: 0}
 --- !u!1 &959515701
 GameObject:
   m_ObjectHideFlags: 0
@@ -60440,7 +60455,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InstructionDrawing
   drawingPanel: {fileID: 1107618318}
-  videoImageParent: {fileID: 1774374049}
+  videoImageParent: {fileID: 245753444}
   capturedImage: {fileID: 243205374}
   canvasRect: {fileID: 243205372}
   penModeButton: {fileID: 588847328}
@@ -85333,99 +85348,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentMarker
   equipmentId: 20d88ddf-3088-4116-906d-9b05c163bf77
   teleportPoint: {fileID: 1492639109}
---- !u!1 &1616796426
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1616796427}
-  - component: {fileID: 1616796429}
-  - component: {fileID: 1616796428}
-  - component: {fileID: 1616796430}
-  m_Layer: 5
-  m_Name: "\uC601\uC0C1 (1)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1616796427
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1616796426}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 245753444}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1616796428
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1616796426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.94117653, g: 0.9607844, b: 0.98823535, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: db4525d2330b36742a103ab0d52e719e, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &1616796429
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1616796426}
-  m_CullTransparentMesh: 1
---- !u!114 &1616796430
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1616796426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 448d8f0546eeb934e954e2e24c280823, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DropZone
-  dropZoneImage: {fileID: 1616796428}
-  normalColor: {r: 1, g: 1, b: 1, a: 0}
-  highlightColor: {r: 0.5019608, g: 0.76862746, b: 0.9607843, a: 0.09}
-  alertPanel: {fileID: 587359761}
-  alertText: {fileID: 1789374812}
 --- !u!1 &1617885610
 GameObject:
   m_ObjectHideFlags: 0

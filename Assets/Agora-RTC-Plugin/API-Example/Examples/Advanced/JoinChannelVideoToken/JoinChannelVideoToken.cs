@@ -405,6 +405,12 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
         // 카메라/커스텀 비디오트랙 관련 코드는 당분간 사용하지 않는다 (아래 주석 처리).
         private bool _isEngineReady = false;
 
+        // 통화 종료 처리용 상태
+        // _hasJoined: 실제로 채널에 join한 적이 있는지 (join 전에 패널이 닫히면 상대에게 종료 신호를 보낼 필요 없음)
+        // _endingFromRemote: 상대(AR)가 먼저 끊어서 닫히는 중인지 (이 경우엔 다시 종료 신호를 보내지 않음 — 핑퐁 방지)
+        internal bool _hasJoined = false;
+        private bool _endingFromRemote = false;
+
         private void Start()
         {
             LoadAssetData();
@@ -415,6 +421,7 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
 
             VideoCallSignalingMR.OnCallAccepted += HandleCallAccepted;
             VideoCallSignalingMR.OnCallRejected += HandleCallRejected;
+            VideoCallSignalingMR.OnCallEnded += HandleCallEnded;
 
             DebugState("[WAIT] 통화 수락 대기 중...");
         }
@@ -471,12 +478,45 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
             DebugState($"[CALL] 거절됨: {channelName}");
         }
 
-        // 패널이 꺼지면(통화 종료) 채널에서 나간다
+        // AR이 통화를 끊음 → 나도 같이 나가야 함 (패널을 꺼서 OnDisable이 처리하게 함)
+        private void HandleCallEnded(string channelName)
+        {
+            if (channelName != _channelName) return; // 다른 통화면 무시
+            DebugState("상대방이 통화를 종료했습니다");
+            _endingFromRemote = true;
+            gameObject.SetActive(false);
+        }
+
+        // 패널이 꺼지면(통화 종료) 채널에서 나간다.
+        // 내가 먼저 끊는 경우(패널을 직접 닫는 경우)엔 AR에게도 종료 신호를 보낸다.
         private void OnDisable()
         {
             if (RtcEngine != null)
             {
+                if (_hasJoined && !_endingFromRemote)
+                {
+                    VideoCallSignalingMR.Instance?.EndCall(_channelName);
+                }
                 RtcEngine.LeaveChannel();
+            }
+
+            // 내가 먼저 나갈 땐 OnUserOffline이 오지 않아 예전 AR 영상 뷰가 그대로 남는다.
+            // 남겨두면 재연결 시 MakeVideoView가 "이미 있다"고 착각해 재사용해버리고,
+            // 그 VideoSurface는 이전 세션에 바인딩된 상태라 새 영상을 못 받는다 (화면 안 뜸).
+            // 재연결 때 항상 새로 만들어지도록 여기서 확실히 지운다.
+            ClearRemoteVideoViews();
+
+            _hasJoined = false;
+            _endingFromRemote = false;
+        }
+
+        private void ClearRemoteVideoViews()
+        {
+            if (remoteVideoContainer == null) return;
+
+            for (int i = remoteVideoContainer.childCount - 1; i >= 0; i--)
+            {
+                Destroy(remoteVideoContainer.GetChild(i).gameObject);
             }
         }
 
@@ -485,6 +525,7 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
         {
             VideoCallSignalingMR.OnCallAccepted -= HandleCallAccepted;
             VideoCallSignalingMR.OnCallRejected -= HandleCallRejected;
+            VideoCallSignalingMR.OnCallEnded -= HandleCallEnded;
 
             if (_webCam != null && _webCam.isPlaying)
                 _webCam.Stop();
@@ -735,6 +776,7 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
         public override void OnJoinChannelSuccess(RtcConnection connection, int elapsed)
         {
             _owner.DebugState("방에 들어갔습니다");
+            _owner._hasJoined = true; // 이후 패널이 꺼질 때 AR에게 종료 신호를 보내도 되는 상태
             // MR은 자기 영상을 publish하지 않으므로 자신(uid 0)의 비디오 슬롯은 만들지 않음
             //JoinChannelVideoToken.MakeVideoView(0, connection.channelId);
         }

@@ -6,56 +6,56 @@ using UnityEngine.EventSystems;
 using UnityEngine.Networking;
 using TMPro;
 
-// È­»óÅëÈ­ > Áö½ÃÇÏ±â ±×¸®±â Ã¢
+// í™”ìƒí†µí™” > ì§€ì‹œí•˜ê¸° ê·¸ë¦¬ê¸° ì°½
 public class InstructionDrawing : MonoBehaviour,
     IPointerDownHandler, IPointerUpHandler, IDragHandler
 {
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ÆĞ³Î
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    [Header("ÆĞ³Î")]
-    public GameObject drawingPanel;         // ±×¸®±â Ã¢ ·çÆ®
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // íŒ¨ë„
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    [Header("íŒ¨ë„")]
+    public GameObject drawingPanel;         // ê·¸ë¦¬ê¸° ì°½ ë£¨íŠ¸
 
-    [Header("UI ¿¬°á")]
-    public Transform videoImageParent;      // ¿µ»ó (1) ¿ÀºêÁ§Æ® ¿¬°á
-    private RawImage videoRawImage;         // ·±Å¸ÀÓ¿¡ ÀÚµ¿ Å½»ö
-    public RawImage capturedImage;         // Ä¸Ã³µÈ ÀÌ¹ÌÁö Ç¥½Ã
-    public RectTransform canvasRect;        // ±×¸®±â ¿µ¿ª RectTransform
+    [Header("UI ì—°ê²°")]
+    public Transform videoImageParent;      // ì˜ìƒ (1) ì˜¤ë¸Œì íŠ¸ ì—°ê²°
+    private RawImage videoRawImage;         // ëŸ°íƒ€ì„ì— ìë™ íƒìƒ‰
+    public RawImage capturedImage;         // ìº¡ì²˜ëœ ì´ë¯¸ì§€ í‘œì‹œ
+    public RectTransform canvasRect;        // ê·¸ë¦¬ê¸° ì˜ì—­ RectTransform
 
-    [Header("¹öÆ°")]
-    public Button penModeButton;         // Ææ ¸ğµå ¹öÆ°
-    public Button stickerModeButton;     // ½ºÆ¼Ä¿ ¸ğµå ¹öÆ°
-    public Button undoButton;            // ÀÌÀü ¹öÆ°
-    public Button sendButton;            // Àü¼Û ¹öÆ°
-    public Button cancelButton;          // Ãë¼Ò ¹öÆ°
+    [Header("ë²„íŠ¼")]
+    public Button penModeButton;         // íœ ëª¨ë“œ ë²„íŠ¼
+    public Button stickerModeButton;     // ìŠ¤í‹°ì»¤ ëª¨ë“œ ë²„íŠ¼
+    public Button undoButton;            // ì´ì „ ë²„íŠ¼
+    public Button sendButton;            // ì „ì†¡ ë²„íŠ¼
+    public Button cancelButton;          // ì·¨ì†Œ ë²„íŠ¼
 
-    [Header("Ææ ¼³Á¤")]
+    [Header("íœ ì„¤ì •")]
     public Color penColor = Color.red;
     public int penWidth = 5;
 
-    [Header("½ºÆ¼Ä¿")]
-    public Sprite checkSprite;           // Ã¼Å© ½ºÆ¼Ä¿ ½ºÇÁ¶óÀÌÆ®
-    public GameObject stickerPrefab;        // ½ºÆ¼Ä¿ ÇÁ¸®ÆÕ (Image)
+    [Header("ìŠ¤í‹°ì»¤")]
+    public Sprite checkSprite;           // ì²´í¬ ìŠ¤í‹°ì»¤ ìŠ¤í”„ë¼ì´íŠ¸
+    public GameObject stickerPrefab;        // ìŠ¤í‹°ì»¤ í”„ë¦¬íŒ¹ (Image)
 
-    [Header("¼­¹ö")]
+    [Header("ì„œë²„")]
     public string serverUrl = "http://192.168.0.66:3000/api/files/instruction";
 
-    [Header("¾Ë¸²")]
-    public GameObject alertPanel;       // ¾Ë¸² ÆĞ³Î
-    public TMP_Text alertText;        // ¾Ë¸² ÅØ½ºÆ®
+    [Header("ì•Œë¦¼")]
+    public GameObject alertPanel;       // ì•Œë¦¼ íŒ¨ë„
+    public TMP_Text alertText;        // ì•Œë¦¼ í…ìŠ¤íŠ¸
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ³»ºÎ »óÅÂ
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ë‚´ë¶€ ìƒíƒœ
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private enum DrawMode { Pen, Sticker }
     private DrawMode _mode = DrawMode.Pen;
 
-    private Texture2D _drawTexture;        // ±×¸®±â¿ë ÅØ½ºÃ³
+    private Texture2D _drawTexture;        // ê·¸ë¦¬ê¸°ìš© í…ìŠ¤ì²˜
     private bool _isDrawing = false;
     private Vector2 _lastPos;
 
-    // Undo ½ºÅÃ
-    private Stack<object> _undoStack = new Stack<object>();  // Texture2D ¶Ç´Â GameObject
+    // Undo ìŠ¤íƒ
+    private Stack<object> _undoStack = new Stack<object>();  // Texture2D ë˜ëŠ” GameObject
 
     void Start()
     {
@@ -68,48 +68,49 @@ public class InstructionDrawing : MonoBehaviour,
         drawingPanel?.SetActive(false);
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // Áö½ÃÇÏ±â ¹öÆ° Å¬¸¯ ¡æ Ã¢ ¿­±â
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ì§€ì‹œí•˜ê¸° ë²„íŠ¼ í´ë¦­ â†’ ì°½ ì—´ê¸°
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public void Open()
     {
-        // ·±Å¸ÀÓ¿¡ µ¿Àû »ı¼ºµÈ RawImage Å½»ö
+        // ëŸ°íƒ€ì„ì— ë™ì  ìƒì„±ëœ RawImage íƒìƒ‰
         if (videoRawImage == null && videoImageParent != null)
             videoRawImage = videoImageParent.GetComponentInChildren<RawImage>(includeInactive: true);
 
         if (videoRawImage == null || videoRawImage.texture == null)
         {
-            Debug.LogWarning("[InstructionDrawing] È­»óÅëÈ­ ÅØ½ºÃ³ ¾øÀ½");
+            Debug.LogWarning("[InstructionDrawing] í™”ìƒí†µí™” í…ìŠ¤ì²˜ ì—†ìŒ");
             return;
         }
 
-        // È­»óÅëÈ­ È­¸é Ä¸Ã³
+        // í™”ìƒí†µí™” í™”ë©´ ìº¡ì²˜
         CaptureVideoFrame();
 
-        // ÃÊ±âÈ­
+        // ì´ˆê¸°í™”
         _undoStack.Clear();
         SetMode(DrawMode.Pen);
 
         drawingPanel?.SetActive(true);
-        Debug.Log("[InstructionDrawing] ±×¸®±â Ã¢ ¿­¸²");
+        Debug.Log("[InstructionDrawing] ê·¸ë¦¬ê¸° ì°½ ì—´ë¦¼");
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // È­»óÅëÈ­ È­¸é Ä¸Ã³
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // í™”ìƒí†µí™” í™”ë©´ ìº¡ì²˜
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private void CaptureVideoFrame()
     {
         var src = videoRawImage.texture;
         int w = src.width;
         int h = src.height;
 
-        // RenderTexture ¡æ Texture2D º¯È¯
+        // RenderTexture â†’ Texture2D ë³€í™˜
         var rt = RenderTexture.GetTemporary(w, h, 0);
         Graphics.Blit(src, rt);
 
         var prev = RenderTexture.active;
         RenderTexture.active = rt;
 
+        if (_drawTexture != null) Destroy(_drawTexture);
         _drawTexture = new Texture2D(w, h, TextureFormat.RGBA32, false);
         _drawTexture.ReadPixels(new Rect(0, 0, w, h), 0, 0);
         _drawTexture.Apply();
@@ -117,30 +118,32 @@ public class InstructionDrawing : MonoBehaviour,
         RenderTexture.active = prev;
         RenderTexture.ReleaseTemporary(rt);
 
-        // yÃà µÚÁı±â (Agora ¿µ»óÀÌ µÚÁıÇô¼­ ³ª¿À´Â °æ¿ì º¸Á¤)
-        FlipTextureVertically(_drawTexture);
+        // yì¶• ë’¤ì§‘ê¸° (RenderTexture â†’ Texture2D ë¦¬ë“œë°± ì‹œ ìƒí•˜ ë°˜ì „ë˜ëŠ” ê²ƒ ë³´ì •)
+        var unflipped = _drawTexture;
+        _drawTexture = FlipTextureVertically(unflipped);
+        Destroy(unflipped);
 
-        // Ä¸Ã³ ÀÌ¹ÌÁö¿¡ Ç¥½Ã
+        // ìº¡ì²˜ ì´ë¯¸ì§€ì— í‘œì‹œ
         if (capturedImage) capturedImage.texture = _drawTexture;
 
-        Debug.Log($"[InstructionDrawing] Ä¸Ã³ ¿Ï·á: {w}x{h}");
+        Debug.Log($"[InstructionDrawing] ìº¡ì²˜ ì™„ë£Œ: {w}x{h}");
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ¸ğµå ÀüÈ¯
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ëª¨ë“œ ì „í™˜
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private void SetMode(DrawMode mode)
     {
         _mode = mode;
-        Debug.Log("[InstructionDrawing] ¸ğµå: " + mode);
+        Debug.Log("[InstructionDrawing] ëª¨ë“œ: " + mode);
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // Æ÷ÀÎÅÍ ÀÌº¥Æ® (Ææ / ½ºÆ¼Ä¿)
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // í¬ì¸í„° ì´ë²¤íŠ¸ (íœ / ìŠ¤í‹°ì»¤)
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (_drawTexture == null) return;  // Ä¸Ã³ ÀüÀÌ¸é ¹«½Ã
+        if (_drawTexture == null) return;  // ìº¡ì²˜ ì „ì´ë©´ ë¬´ì‹œ
 
         if (_mode == DrawMode.Pen)
         {
@@ -168,9 +171,9 @@ public class InstructionDrawing : MonoBehaviour,
         _isDrawing = false;
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // Ææ ±×¸®±â
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // íœ ê·¸ë¦¬ê¸°
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private void DrawLine(Vector2 from, Vector2 to)
     {
         if (_drawTexture == null) return;
@@ -180,7 +183,7 @@ public class InstructionDrawing : MonoBehaviour,
         int x1 = Mathf.RoundToInt(to.x);
         int y1 = Mathf.RoundToInt(to.y);
 
-        // Bresenham ¶óÀÎ ¾Ë°í¸®Áò
+        // Bresenham ë¼ì¸ ì•Œê³ ë¦¬ì¦˜
         int dx = Mathf.Abs(x1 - x0), dy = Mathf.Abs(y1 - y0);
         int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
         int err = dx - dy;
@@ -206,34 +209,35 @@ public class InstructionDrawing : MonoBehaviour,
                     _drawTexture.SetPixel(x, y, penColor);
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ½ºÆ¼Ä¿ ¹èÄ¡
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ìŠ¤í‹°ì»¤ ë°°ì¹˜
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private void PlaceSticker(PointerEventData eventData)
     {
         if (stickerPrefab == null || canvasRect == null) return;
 
         var sticker = Instantiate(stickerPrefab, canvasRect);
+        sticker.AddComponent<StickerMarker>();
         var img = sticker.GetComponent<Image>();
         if (img && checkSprite) img.sprite = checkSprite;
 
-        // À§Ä¡ ¼³Á¤
+        // ìœ„ì¹˜ ì„¤ì •
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect, eventData.position, eventData.pressEventCamera, out Vector2 localPos);
         sticker.GetComponent<RectTransform>().anchoredPosition = localPos;
 
-        // Undo ½ºÅÃ¿¡ Ãß°¡
+        // Undo ìŠ¤íƒì— ì¶”ê°€
         _undoStack.Push(sticker);
 
-        Debug.Log("[InstructionDrawing] ½ºÆ¼Ä¿ ¹èÄ¡: " + localPos);
+        Debug.Log("[InstructionDrawing] ìŠ¤í‹°ì»¤ ë°°ì¹˜: " + localPos);
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Undo
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private void SaveTextureSnapshot()
     {
-        // ÇöÀç ÅØ½ºÃ³ º¹»çº» ÀúÀå
+        // í˜„ì¬ í…ìŠ¤ì²˜ ë³µì‚¬ë³¸ ì €ì¥
         var snapshot = new Texture2D(_drawTexture.width, _drawTexture.height, TextureFormat.RGBA32, false);
         Graphics.CopyTexture(_drawTexture, snapshot);
         _undoStack.Push(snapshot);
@@ -247,7 +251,7 @@ public class InstructionDrawing : MonoBehaviour,
 
         if (last is Texture2D snapshot)
         {
-            // Ææ µÇµ¹¸®±â
+            // íœ ë˜ëŒë¦¬ê¸°
             Graphics.CopyTexture(snapshot, _drawTexture);
             _drawTexture.Apply();
             if (capturedImage) capturedImage.texture = _drawTexture;
@@ -255,14 +259,14 @@ public class InstructionDrawing : MonoBehaviour,
         }
         else if (last is GameObject sticker)
         {
-            // ½ºÆ¼Ä¿ Á¦°Å
+            // ìŠ¤í‹°ì»¤ ì œê±°
             Destroy(sticker);
         }
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // Àü¼Û
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ì „ì†¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public void OnSend()
     {
         StartCoroutine(SendImage());
@@ -275,17 +279,18 @@ public class InstructionDrawing : MonoBehaviour,
         int w = _drawTexture.width;
         int h = _drawTexture.height;
 
-        // RenderTexture¿¡ ±×¸®±â ÅØ½ºÃ³ + ½ºÆ¼Ä¿¸¦ ÇÕ¼º
+        // RenderTextureì— ê·¸ë¦¬ê¸° í…ìŠ¤ì²˜ + ìŠ¤í‹°ì»¤ë¥¼ í•©ì„±
         var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
         Graphics.Blit(_drawTexture, rt);
 
-        // ½ºÆ¼Ä¿¸¦ RenderTexture¿¡ Á÷Á¢ ±×¸®±â
+        // ìŠ¤í‹°ì»¤ë¥¼ RenderTextureì— ì§ì ‘ ê·¸ë¦¬ê¸°
         RenderTexture.active = rt;
         GL.PushMatrix();
         GL.LoadPixelMatrix(0, w, 0, h);
 
-        foreach (Transform child in canvasRect)
+        foreach (var marker in canvasRect.GetComponentsInChildren<StickerMarker>())
         {
+            var child = marker.transform;
             var img = child.GetComponent<Image>();
             if (img == null || img.sprite == null) continue;
 
@@ -293,7 +298,7 @@ public class InstructionDrawing : MonoBehaviour,
             var pos = rect.anchoredPosition;
             var size = rect.sizeDelta;
 
-            // ½ºÆ¼Ä¿ À§Ä¡¸¦ ÅØ½ºÃ³ ÁÂÇ¥·Î º¯È¯
+            // ìŠ¤í‹°ì»¤ ìœ„ì¹˜ë¥¼ í…ìŠ¤ì²˜ ì¢Œí‘œë¡œ ë³€í™˜
             float scaleX = (float)w / canvasRect.rect.width;
             float scaleY = (float)h / canvasRect.rect.height;
             float x = (pos.x - canvasRect.rect.x) * scaleX - size.x * scaleX / 2;
@@ -306,7 +311,7 @@ public class InstructionDrawing : MonoBehaviour,
 
         GL.PopMatrix();
 
-        // RenderTexture ¡æ Texture2D
+        // RenderTexture â†’ Texture2D
         var final = new Texture2D(w, h, TextureFormat.RGB24, false);
         final.ReadPixels(new Rect(0, 0, w, h), 0, 0);
         final.Apply();
@@ -314,7 +319,7 @@ public class InstructionDrawing : MonoBehaviour,
         RenderTexture.active = null;
         RenderTexture.ReleaseTemporary(rt);
 
-        // YÃà µÚÁı±â
+        // Yì¶• ë’¤ì§‘ê¸°
         var flipped = FlipTextureVertically(final);
         Destroy(final);
 
@@ -329,14 +334,14 @@ public class InstructionDrawing : MonoBehaviour,
 
         if (req.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("[InstructionDrawing] Àü¼Û ¿Ï·á");
-            ShowAlert("Àü¼ÛÀÌ ¼º°øµÇ¾ú½À´Ï´Ù.");
+            Debug.Log("[InstructionDrawing] ì „ì†¡ ì™„ë£Œ");
+            ShowAlert("ì „ì†¡ì´ ì„±ê³µë˜ì—ˆìŠµë‹ˆë‹¤.");
             StartCoroutine(CloseAfterDelay(3f));
         }
         else
         {
-            Debug.LogError("[InstructionDrawing] Àü¼Û ½ÇÆĞ: " + req.error);
-            ShowAlert($"Àü¼ÛÀÌ ½ÇÆĞÇÏ¿´½À´Ï´Ù.{ req.error}");
+            Debug.LogError("[InstructionDrawing] ì „ì†¡ ì‹¤íŒ¨: " + req.error);
+            ShowAlert($"ì „ì†¡ì´ ì‹¤íŒ¨í•˜ì˜€ìŠµë‹ˆë‹¤.{ req.error}");
         }
     }
 
@@ -350,7 +355,7 @@ public class InstructionDrawing : MonoBehaviour,
         return flipped;
     }
 
-    // ¾Ë¸² Ç¥½Ã (3ÃÊ ÈÄ ÀÚµ¿ ´İÈû)
+    // ì•Œë¦¼ í‘œì‹œ (3ì´ˆ í›„ ìë™ ë‹«í˜)
     private IEnumerator CloseAfterDelay(float seconds)
     {
         yield return new WaitForSeconds(seconds);
@@ -370,28 +375,32 @@ public class InstructionDrawing : MonoBehaviour,
         alertPanel?.SetActive(false);
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // Ãë¼Ò
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ì·¨ì†Œ
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public void OnCancel()
     {
-        // ½ºÆ¼Ä¿ ¸ğµÎ Á¦°Å
-        foreach (Transform child in canvasRect)
-            Destroy(child.gameObject);
+        // ìŠ¤í‹°ì»¤ë§Œ ì œê±° (canvasRectì—ëŠ” undo ë²„íŠ¼ ë“± ë‹¤ë¥¸ UIë„ ê°™ì´ ë§¤ë‹¬ë ¤ ìˆì–´
+        // ìì‹ì„ ì „ë¶€ ì§€ìš°ë©´ ì•ˆ ë¨ â€” ë§ˆì»¤ê°€ ë¶™ì€ ìŠ¤í‹°ì»¤ë§Œ ê³¨ë¼ ì§€ìš´ë‹¤)
+        foreach (var marker in canvasRect.GetComponentsInChildren<StickerMarker>())
+            Destroy(marker.gameObject);
 
         _undoStack.Clear();
         drawingPanel?.SetActive(false);
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // À¯Æ¿: ·ÎÄÃ ÁÂÇ¥ º¯È¯
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ëŸ°íƒ€ì„ì— ìƒì„±ëœ ìŠ¤í‹°ì»¤ë¥¼ canvasRectì˜ ë‹¤ë¥¸ UI ìì‹(ë²„íŠ¼ ë“±)ê³¼ êµ¬ë¶„í•˜ê¸° ìœ„í•œ ë§ˆì»¤
+    private class StickerMarker : MonoBehaviour { }
+
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ìœ í‹¸: ë¡œì»¬ ì¢Œí‘œ ë³€í™˜
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private Vector2 GetLocalPos(PointerEventData eventData)
     {
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect, eventData.position, eventData.pressEventCamera, out Vector2 localPos);
 
-        // ÅØ½ºÃ³ ÁÂÇ¥·Î º¯È¯
+        // í…ìŠ¤ì²˜ ì¢Œí‘œë¡œ ë³€í™˜
         var rect = canvasRect.rect;
         float x = (localPos.x - rect.x) / rect.width * _drawTexture.width;
         float y = (localPos.y - rect.y) / rect.height * _drawTexture.height;
