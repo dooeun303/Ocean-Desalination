@@ -147,6 +147,67 @@ public class VideoCallSignalingMR : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
+    // 실시간 그리기: 새 선 시작 / 점 추가 / 선 끝 (LiveDrawOverlay에서 호출)
+    // AR쪽 InmoVideoCallSignaling.cs의 OnDrawStart/OnDrawPoint/OnDrawEnd로 수신됨.
+    // ─────────────────────────────────────────────
+    public void SendDrawStart(string strokeId, string colorHex, float widthNorm)
+    {
+        Send(new CallSignalMessage { type = "draw_start", strokeId = strokeId, drawColor = colorHex, drawWidth = widthNorm });
+    }
+
+    public void SendDrawPoint(string strokeId, float x, float y)
+    {
+        Send(new CallSignalMessage { type = "draw_point", strokeId = strokeId, drawX = x, drawY = y });
+    }
+
+    public void SendDrawEnd(string strokeId)
+    {
+        Send(new CallSignalMessage { type = "draw_end", strokeId = strokeId });
+    }
+
+    // ─────────────────────────────────────────────
+    // 3D 모델 회전 스트리밍 (모델 회전 테스트 패널에서 드래그로 회전시키는 동안 호출)
+    // AR쪽 InmoVideoCallSignaling.cs의 OnModelRotateReceived로 수신됨.
+    // ─────────────────────────────────────────────
+    public void SendModelRotation(Quaternion rotation)
+    {
+        Send(new CallSignalMessage { type = "model_rotate", rotX = rotation.x, rotY = rotation.y, rotZ = rotation.z, rotW = rotation.w });
+    }
+
+    // ─────────────────────────────────────────────
+    // 3D 모델 위 포인팅/지시 (모델 회전 테스트 패널에서 컨트롤러 레이로 모델을 가리키는 동안 호출)
+    // AR쪽 InmoVideoCallSignaling.cs의 OnModelPointReceived로 수신됨. localPoint는 modelRoot 기준
+    // 로컬좌표 - 양쪽이 같은 정규화 스케일을 쓰므로 그대로 대응된다.
+    // ─────────────────────────────────────────────
+    public void SendModelPoint(bool pointing, string partName, Vector3 localPoint)
+    {
+        Send(new CallSignalMessage { type = "model_point", pointing = pointing, partName = partName, pointX = localPoint.x, pointY = localPoint.y, pointZ = localPoint.z });
+    }
+
+    // ─────────────────────────────────────────────
+    // 3D 모델 분해도 토글 (모델 회전 테스트 패널에서 "분해/조립" 버튼 누를 때 호출)
+    // AR쪽 InmoVideoCallSignaling.cs의 OnModelExplodeReceived로 수신됨. 애니메이션 자체는
+    // 이 신호를 받은 쪽이 각자 재생한다(중간값을 계속 스트리밍하지 않음).
+    // ─────────────────────────────────────────────
+    public void SendModelExplode(bool exploded)
+    {
+        Send(new CallSignalMessage { type = "model_explode", exploded = exploded });
+    }
+
+    void Send(CallSignalMessage msg)
+    {
+        string json = JsonConvert.SerializeObject(msg);
+        if (_ws != null && _ws.ReadyState == WebSocketState.Open)
+        {
+            _ws.Send(json);
+        }
+        else
+        {
+            Debug.LogWarning("[CallWS-MR] 전송 실패 — 연결 안 됨");
+        }
+    }
+
+    // ─────────────────────────────────────────────
     // 통화 종료 전송 (내가 통화를 끊을 때 호출)
     // ─────────────────────────────────────────────
     public void EndCall(string channelName)
@@ -189,4 +250,19 @@ public class CallSignalMessage
     public int stepIndex;       // guide_step 일 때만 사용 (1부터 시작)
     public int stepCount;       // guide_step 일 때만 사용
     public string arText;       // guide_step 일 때만 사용 - AR에 표시할 한 문장
+    public string strokeId;     // draw_start/draw_point/draw_end 공용
+    public string drawColor;    // draw_start 전용 - "#RRGGBB"
+    public float drawWidth;     // draw_start 전용 - 캔버스 너비 대비 정규화된 두께
+    public float drawX;         // draw_point 전용 - 0..1 정규화
+    public float drawY;         // draw_point 전용 - 0..1 정규화
+    public float rotX;          // model_rotate 전용 - 쿼터니언 x
+    public float rotY;          // model_rotate 전용 - 쿼터니언 y
+    public float rotZ;          // model_rotate 전용 - 쿼터니언 z
+    public float rotW;          // model_rotate 전용 - 쿼터니언 w
+    public bool pointing;       // model_point 전용 - 현재 모델을 가리키고 있는지
+    public string partName;     // model_point 전용 - 맞은 부위(GLB 노드) 이름
+    public float pointX;        // model_point 전용 - modelRoot 로컬좌표
+    public float pointY;        // model_point 전용 - modelRoot 로컬좌표
+    public float pointZ;        // model_point 전용 - modelRoot 로컬좌표
+    public bool exploded;       // model_explode 전용 - 분해도 펼침 여부
 }

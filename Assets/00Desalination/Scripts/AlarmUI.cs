@@ -60,7 +60,13 @@ public class AlarmUI : MonoBehaviour
         // equipment_id 저장 (텔포용)
         _currentEquipmentId = alarm.equipment?.id;
         // 텍스트 세팅
-        string formattedTime = DateTime.Parse(alarm.triggered_at).ToString("yyyy-MM-dd HH:mm:ss");
+        // 서버(Postgres)에서 오는 triggered_at 포맷이 .NET DateTime.Parse가 못 읽는 형태로 올 때가
+        // 있어(FormatException 실기 확인) - 네트워크로 들어오는 외부 값이라 파싱 실패를 가정하고
+        // 방어적으로 처리한다. 실패하면 원본 문자열을 그대로 보여줘서 최소한 알람 자체는 안 놓치게 함.
+        string formattedTime = DateTime.TryParse(alarm.triggered_at, null,
+            System.Globalization.DateTimeStyles.RoundtripKind, out var parsedTime)
+            ? parsedTime.ToString("yyyy-MM-dd HH:mm:ss")
+            : alarm.triggered_at;
         timeText.text = formattedTime;
         titleText.text = $"{alarm.equipment?.name}의 고장예지 확률이 임계값을 초과하였습니다.";
         descText.text = alarm.description;

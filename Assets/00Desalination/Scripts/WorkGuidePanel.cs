@@ -33,6 +33,26 @@ public class WorkGuidePanel : MonoBehaviour
             "기존 밸브를 제거하고 새 밸브를 장착합니다. 방향과 규격이 일치하는지 확인 후 단단히 고정하세요."),
     };
 
+    // 고장예지 알람 → 펌프 점검 시나리오 데모용 (2026-08-12, 검토 회의 후속).
+    static readonly Step[] PumpInspectionSteps =
+    {
+        new Step(
+            "펌프 외관을 확인하세요",
+            "AI 예지 알람이 발생한 펌프입니다. 케이싱 및 배관 연결부에 누유나 부식 흔적이 있는지 육안으로 확인하세요."),
+        new Step(
+            "진동과 소음을 확인하세요",
+            "펌프 가동 중 비정상적인 진동이나 소음이 있는지 확인합니다. 이상이 감지되면 정도를 기록하세요."),
+        new Step(
+            "베어링 온도를 측정하세요",
+            "베어링 하우징 표면 온도를 측정합니다. 정상 범위(70도 이하)를 초과하는지 확인하세요."),
+        new Step(
+            "점검 결과를 전문가에게 보고하세요",
+            "점검한 항목과 이상 유무를 원격 전문가에게 보고하고, 필요 시 추가 조치 지시를 받으세요."),
+    };
+
+    // 데모 시나리오 전환 지점 - 다른 시나리오를 보여줄 땐 이 한 줄만 바꾸면 됨.
+    static readonly Step[] ActiveSteps = PumpInspectionSteps;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {
@@ -76,7 +96,7 @@ public class WorkGuidePanel : MonoBehaviour
     {
         channelName = channel;
         stepIndex = 0;
-        completed = new bool[ValveReplacementSteps.Length];
+        completed = new bool[ActiveSteps.Length];
         panel.SetActive(true);
         RefreshStep();
         SendCurrentStep();
@@ -95,8 +115,8 @@ public class WorkGuidePanel : MonoBehaviour
 
     void RefreshStep()
     {
-        var step = ValveReplacementSteps[stepIndex];
-        stepCountText.text = $"{stepIndex + 1} / {ValveReplacementSteps.Length}단계";
+        var step = ActiveSteps[stepIndex];
+        stepCountText.text = $"{stepIndex + 1} / {ActiveSteps.Length}단계";
         mrStepText.text = step.mr;
         completeBtnLabel.text = completed[stepIndex] ? "완료됨 ✓" : "이 단계 완료";
         completeBtnImage.color = completed[stepIndex] ? new Color(0.2f, 0.6f, 0.3f) : new Color(0.35f, 0.35f, 0.4f);
@@ -105,8 +125,8 @@ public class WorkGuidePanel : MonoBehaviour
     void SendCurrentStep()
     {
         if (string.IsNullOrEmpty(channelName)) return;
-        var step = ValveReplacementSteps[stepIndex];
-        VideoCallSignalingMR.Instance?.SendGuideStep(channelName, stepIndex + 1, ValveReplacementSteps.Length, step.ar);
+        var step = ActiveSteps[stepIndex];
+        VideoCallSignalingMR.Instance?.SendGuideStep(channelName, stepIndex + 1, ActiveSteps.Length, step.ar);
     }
 
     void OnPrev()
@@ -119,7 +139,7 @@ public class WorkGuidePanel : MonoBehaviour
 
     void OnNext()
     {
-        if (stepIndex >= ValveReplacementSteps.Length - 1) return;
+        if (stepIndex >= ActiveSteps.Length - 1) return;
         stepIndex++;
         RefreshStep();
         SendCurrentStep();
