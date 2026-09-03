@@ -109,6 +109,12 @@ public class AlarmUI : MonoBehaviour
                         xrRig.position = marker.teleportPoint.position;
                         xrRig.rotation = marker.teleportPoint.rotation;
                     }));
+                    // "고장예지 알람 설비로 이동할 때 뭔가 효과(테두리 등)가 있었으면 좋겠다" 요청 -
+                    // 도착한 설비를 잠깐 밝은 색으로 펄스 하이라이트해서 어떤 설비인지 바로 알아보게 한다.
+                    // 지원요청 수락 텔레포트(SupportCallList.cs)에서도 재사용하도록 EquipmentMarker에 있다.
+                    // marker(설비) 자신에게 코루틴을 걸어야 한다 - 이 컴포넌트가 나중에 비활성화돼도
+                    // 설비 자신은 안 꺼지니 안전하다(SupportCallList.cs와 동일한 이유).
+                    marker.StartCoroutine(marker.Highlight());
                 }
                 else
                     Debug.LogWarning("[AlarmUI] 텔레포트 포인트 없음: " + marker.name);

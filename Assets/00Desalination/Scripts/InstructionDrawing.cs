@@ -118,10 +118,12 @@ public class InstructionDrawing : MonoBehaviour,
         RenderTexture.active = prev;
         RenderTexture.ReleaseTemporary(rt);
 
-        // y축 뒤집기 (RenderTexture → Texture2D 리드백 시 상하 반전되는 것 보정)
-        var unflipped = _drawTexture;
-        _drawTexture = FlipTextureVertically(unflipped);
-        Destroy(unflipped);
+        // 2026-08-26: "화면 캡처가 위아래 반대로 나온다"는 실기 확인으로 여기 있던 상하 반전
+        // 보정을 없앴다 - 이 소스(화상통화 RawImage 텍스처)는 Blit→ReadPixels 라운드트립에서
+        // 실제로는 뒤집히지 않는데, 여기서 한 번 더 뒤집어서 오히려 화면 미리보기와 그 위에 그리는
+        // 좌표(펜/스티커)까지 전부 위아래가 뒤집힌 채로 어긋나 있었다. SendImage()도 짝을 맞춰서
+        // 같이 없앴다(그동안은 이 위치의 잘못된 반전과 그쪽의 반전이 우연히 서로 상쇄돼서 AR로
+        // 전송되는 최종 이미지만 정상으로 보였을 뿐).
 
         // 캡처 이미지에 표시
         if (capturedImage) capturedImage.texture = _drawTexture;
@@ -319,12 +321,10 @@ public class InstructionDrawing : MonoBehaviour,
         RenderTexture.active = null;
         RenderTexture.ReleaseTemporary(rt);
 
-        // Y축 뒤집기
-        var flipped = FlipTextureVertically(final);
+        // 2026-08-26: 여기 반전도 CaptureVideoFrame()과 짝을 맞춰서 없앴다(위 주석 참고) -
+        // 이제 화면에 보이던 그대로(정상 방향) 인코딩해서 보낸다.
+        byte[] pngData = final.EncodeToPNG();
         Destroy(final);
-
-        byte[] pngData = flipped.EncodeToPNG();
-        Destroy(flipped);
 
         var form = new WWWForm();
         form.AddBinaryData("file", pngData, $"instruction_{System.DateTime.Now:yyyyMMdd_HHmmss}.png", "image/png");
@@ -343,16 +343,6 @@ public class InstructionDrawing : MonoBehaviour,
             Debug.LogError("[InstructionDrawing] 전송 실패: " + req.error);
             ShowAlert($"전송이 실패하였습니다.{ req.error}");
         }
-    }
-
-    private Texture2D FlipTextureVertically(Texture2D src)
-    {
-        int w = src.width, h = src.height;
-        var flipped = new Texture2D(w, h, src.format, false);
-        for (int y = 0; y < h; y++)
-            flipped.SetPixels(0, y, w, 1, src.GetPixels(0, h - 1 - y, w, 1));
-        flipped.Apply();
-        return flipped;
     }
 
     // 알림 표시 (3초 후 자동 닫힘)

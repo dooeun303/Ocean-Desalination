@@ -78,6 +78,18 @@ public class MaintenanceList : MonoBehaviour
         }
 
         _allItems = result;
+
+        // 데모용 고정 항목 - MR에서 유지보수 목록을 열면 항상 맨 위에 이 건(펌프 베어링 마모 의심
+        // 점검)이 보여야 한다는 요청 - 실제 정렬(scheduled_at DESC)과 무관하게 앞으로 당겨온다.
+        const string PinnedDemoItemId = "c7ddf74a-6bd1-444c-875d-f40fcc4ada6f";
+        int pinnedIdx = _allItems.FindIndex(i => i.id == PinnedDemoItemId);
+        if (pinnedIdx > 0)
+        {
+            var pinned = _allItems[pinnedIdx];
+            _allItems.RemoveAt(pinnedIdx);
+            _allItems.Insert(0, pinned);
+        }
+
         _currentPage = 0;
         RenderPage();
     }

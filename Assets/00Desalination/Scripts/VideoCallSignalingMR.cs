@@ -21,6 +21,18 @@ public class VideoCallSignalingMR : MonoBehaviour
     public static event Action<string> OnCallRejected;
     public static event Action<string> OnCallEnded; // AR이 통화를 끊었을 때
 
+    // AR이 거는 지원 요청(SupportCallListPanel)을 MR에서 수락했을 때도 MrCallDockPanel 등
+    // 기존 OnCallAccepted 구독자가 똑같이 반응하도록, 이 통로로 같은 이벤트를 대신 발화해준다.
+    // event는 선언한 클래스 밖에서 직접 Invoke할 수 없어서 이 public 메서드로 감싼다.
+    // 2026-08-26: "도크 닫기 버튼 누르면 통화 종료" 요청 대응으로 callId도 같이 기억해둔다 -
+    // support_call.js REST(/end)를 호출하려면 channelName이 아니라 video_call 테이블의 id가 필요.
+    public static string CurrentSupportCallId { get; private set; }
+    public static void RaiseCallAccepted(string channelName, string callId = null)
+    {
+        CurrentSupportCallId = callId;
+        OnCallAccepted?.Invoke(channelName);
+    }
+
     private WebSocketSharp.WebSocket _ws;
     private CallSignalMessage _pendingMessage = null;
     private readonly object _lockObj = new object();
@@ -66,6 +78,14 @@ public class VideoCallSignalingMR : MonoBehaviour
                 {
                     lock (_lockObj) { _pendingMessage = msg; }
                 }
+                else if (msg != null && msg.type == "guide_step_control")
+                {
+                    lock (_lockObj) { _pendingGuideStepMessage = msg; }
+                }
+                else if (msg != null && msg.type == "maintenance_complete")
+                {
+                    lock (_lockObj) { _pendingMaintenanceComplete = true; }
+                }
             }
             catch (Exception ex)
             {
@@ -90,6 +110,18 @@ public class VideoCallSignalingMR : MonoBehaviour
                     OnCallRejected?.Invoke(_pendingMessage.channelName);
 
                 _pendingMessage = null;
+            }
+
+            if (_pendingGuideStepMessage != null)
+            {
+                OnGuideStepControlReceived?.Invoke(_pendingGuideStepMessage.stepIndex, _pendingGuideStepMessage.stepCount);
+                _pendingGuideStepMessage = null;
+            }
+
+            if (_pendingMaintenanceComplete)
+            {
+                OnMaintenanceComplete?.Invoke();
+                _pendingMaintenanceComplete = false;
             }
         }
     }
@@ -119,32 +151,18 @@ public class VideoCallSignalingMR : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    // 작업 가이드 현재 단계 전송 (작업 가이드 패널에서 이전/다음 클릭 시 호출)
-    // AR쪽 InmoVideoCallSignaling.cs의 OnGuideStepReceived로 수신됨.
+    // 작업 가이드 단계 수신 (2026-08-26: "AR이 넘기면 MR이 자동으로 따라가야 함, MR 이전/다음/
+    // 완료 버튼은 필요없어" - 예전엔 MR이 SendGuideStep()으로 AR에 보내던 방향이었는데 반대로
+    // 바꿨다. AR쪽 InmoVideoCallSignaling.SendGuideStepControl()이 보낸 걸 WorkGuidePanel이
+    // 구독해서 그대로 따라간다.)
     // ─────────────────────────────────────────────
-    public void SendGuideStep(string channelName, int stepIndex, int stepCount, string arText)
-    {
-        var msg = new CallSignalMessage
-        {
-            type = "guide_step",
-            channelName = channelName,
-            stepIndex = stepIndex,
-            stepCount = stepCount,
-            arText = arText
-        };
+    public static event Action<int, int> OnGuideStepControlReceived; // (stepIndex 1-based, stepCount)
+    private CallSignalMessage _pendingGuideStepMessage = null;
 
-        string json = JsonConvert.SerializeObject(msg);
-
-        if (_ws != null && _ws.ReadyState == WebSocketState.Open)
-        {
-            _ws.Send(json);
-            Debug.Log("[CallWS-MR] 작업 가이드 단계 전송: " + json);
-        }
-        else
-        {
-            Debug.LogWarning("[CallWS-MR] 전송 실패 — 연결 안 됨");
-        }
-    }
+    // 2026-08-26: "AR에서 저장 완료하면 MR도 진행 패널을 종료하고 설비 깜빡임도 사라져야 해" -
+    // 통화 상태와 무관하게 항상 오는 신호라 별도 슬롯으로 둔다.
+    public static event Action OnMaintenanceComplete;
+    private bool _pendingMaintenanceComplete = false;
 
     // ─────────────────────────────────────────────
     // 실시간 그리기: 새 선 시작 / 점 추가 / 선 끝 (LiveDrawOverlay에서 호출)
@@ -177,11 +195,25 @@ public class VideoCallSignalingMR : MonoBehaviour
     // ─────────────────────────────────────────────
     // 3D 모델 위 포인팅/지시 (모델 회전 테스트 패널에서 컨트롤러 레이로 모델을 가리키는 동안 호출)
     // AR쪽 InmoVideoCallSignaling.cs의 OnModelPointReceived로 수신됨. localPoint는 modelRoot 기준
-    // 로컬좌표 - 양쪽이 같은 정규화 스케일을 쓰므로 그대로 대응된다.
+    // 로컬좌표 - 양쪽이 같은 정규화 스케일을 쓰므로 그대로 대응된다. localNormal은 히트 지점의
+    // 표면 법선(로컬 방향) - AR쪽 포인터 마커를 표면 안쪽에 파묻히지 않고 바깥으로 띄워서
+    // 그리는 데 쓴다(실기 확인: 법선 없이 "모델 중심→히트 지점" 방향으로 근사했더니 이 펌프처럼
+    // 중심 기준 대칭이 아닌 형태에서는 여전히 파묻혀 보였음).
     // ─────────────────────────────────────────────
-    public void SendModelPoint(bool pointing, string partName, Vector3 localPoint)
+    public void SendModelPoint(bool pointing, string partName, Vector3 localPoint, Vector3 localNormal)
     {
-        Send(new CallSignalMessage { type = "model_point", pointing = pointing, partName = partName, pointX = localPoint.x, pointY = localPoint.y, pointZ = localPoint.z });
+        Send(new CallSignalMessage
+        {
+            type = "model_point",
+            pointing = pointing,
+            partName = partName,
+            pointX = localPoint.x,
+            pointY = localPoint.y,
+            pointZ = localPoint.z,
+            normX = localNormal.x,
+            normY = localNormal.y,
+            normZ = localNormal.z
+        });
     }
 
     // ─────────────────────────────────────────────
@@ -192,6 +224,16 @@ public class VideoCallSignalingMR : MonoBehaviour
     public void SendModelExplode(bool exploded)
     {
         Send(new CallSignalMessage { type = "model_explode", exploded = exploded });
+    }
+
+    // ─────────────────────────────────────────────
+    // 3D 모델 창 열림/닫힘 (ModelRotateTestPanel에서 "모델 회전 테스트"를 열거나 닫을 때, 그리고
+    // "3D모델" 탭을 벗어나거나 다시 들어올 때도 호출) - AR쪽 InmoVideoCallSignaling.OnModelViewChanged로
+    // 수신됨. open=false일 땐 modelUrl을 안 보내도 된다.
+    // ─────────────────────────────────────────────
+    public void SendModelView(bool open, string modelUrl = null)
+    {
+        Send(new CallSignalMessage { type = "model_view", modelViewOpen = open, modelUrl = modelUrl });
     }
 
     void Send(CallSignalMessage msg)
@@ -231,6 +273,18 @@ public class VideoCallSignalingMR : MonoBehaviour
         }
     }
 
+    // 2026-08-26: MR 도크의 닫기 버튼처럼 "내가(MR이) 먼저 통화를 끊는" 경우 전용 - AR에는 기존
+    // EndCall()로 WS만 보내면 되지만, MR 자기 자신의 OnCallEnded 구독자(MrCallDockPanel/
+    // ModelRotateTestPanel/WorkGuidePanel/LiveDrawOverlay)는 "AR이 끊었을 때"만 반응하도록
+    // 짜여 있어서(네트워크로 받은 call_end만 그 이벤트를 발화함) 로컬에서 직접 끊을 땐 아무도
+    // 정리가 안 된다. 그래서 같은 이벤트를 로컬에서도 발화해 기존 정리 로직을 그대로 재사용한다.
+    public void EndCallAsInitiator(string channelName)
+    {
+        EndCall(channelName);
+        OnCallEnded?.Invoke(channelName);
+        CurrentSupportCallId = null;
+    }
+
     void OnDestroy()
     {
         _ws?.Close();
@@ -264,5 +318,10 @@ public class CallSignalMessage
     public float pointX;        // model_point 전용 - modelRoot 로컬좌표
     public float pointY;        // model_point 전용 - modelRoot 로컬좌표
     public float pointZ;        // model_point 전용 - modelRoot 로컬좌표
+    public float normX;         // model_point 전용 - 히트 지점 표면 법선(로컬 방향)
+    public float normY;         // model_point 전용 - 히트 지점 표면 법선(로컬 방향)
+    public float normZ;         // model_point 전용 - 히트 지점 표면 법선(로컬 방향)
     public bool exploded;       // model_explode 전용 - 분해도 펼침 여부
+    public bool modelViewOpen;  // model_view 전용 - 3D 모델 창이 열렸는지
+    public string modelUrl;     // model_view 전용 - open=true일 때 AR이 불러올 glb URL
 }

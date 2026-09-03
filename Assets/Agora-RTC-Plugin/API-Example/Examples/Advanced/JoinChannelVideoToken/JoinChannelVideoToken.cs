@@ -718,11 +718,16 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
             rt.offsetMin = Vector2.zero;
             rt.offsetMax = Vector2.zero;
 
-            // 오브젝트의 AspectRatioFilter 컴포넌트 추가 (얘를 조정해야함)
+            // 오브젝트의 AspectRatioFilter 컴포넌트 추가 - 실제 수신 영상 크기가 도착하면
+            // OnTextureSizeModify로 비율을 갱신한다(AR이 어떤 해상도를 보내든 레터박스가 맞게).
             var fitter = go.AddComponent<AspectRatioFitter>();
             fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
-            fitter.aspectRatio = 2f;
+            fitter.aspectRatio = 16f / 9f; // 실제 값 도착 전 임시 기본값
             var surface = go.AddComponent<VideoSurface>();
+            surface.OnTextureSizeModify += (int width, int height) =>
+            {
+                if (height > 0) fitter.aspectRatio = (float)width / height;
+            };
 
             surface.SetForUser(
                 uid,
