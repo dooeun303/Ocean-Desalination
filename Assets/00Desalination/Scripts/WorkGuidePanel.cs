@@ -110,7 +110,7 @@ public class WorkGuidePanel : MonoBehaviour
     // MrCallDockPanel 헤더가 그대로 가져다 쓴다(예전엔 헤더에 "펌프 P-102 · 정기 점검"이 하드코딩
     // 플레이스홀더로 남아있어서 실제 시나리오와 안 맞았음).
     static readonly Step[] ActiveSteps = PumpBearingWearSteps;
-    public const string JobTitle = "펌프 P-101 · 베어링 마모 의심 점검";
+    public static string JobTitle = "펌프 P-101 · 베어링 마모 의심 점검";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()

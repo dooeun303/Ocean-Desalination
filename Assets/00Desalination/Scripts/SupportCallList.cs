@@ -146,8 +146,17 @@ public class SupportCallList : MonoBehaviour
         }
 
         Debug.Log("[SupportCallList] 지원 요청 수락: " + data.id + " channel=" + data.channel_name);
+
+        // 작업 가이드 "제목"을 실제 설비/유지보수 데이터로 (6단계 지시문은 하드코딩 유지)
+        string _n = string.IsNullOrEmpty(data.equipment_name) ? "설비 미지정" : data.equipment_name;
+        string _d = !string.IsNullOrEmpty(data.maintenance_description) ? data.maintenance_description
+                  : (!string.IsNullOrEmpty(data.work_type) ? data.work_type : "원격 지원");
+        WorkGuidePanel.JobTitle = _n + " · " + _d;
+
         yield return TeleportThenShowDock(data);
+
         gameObject.SetActive(false); // 목록 화면은 닫고 화상통화 화면으로 넘어간다
+
     }
 
     // 해당 설비의 EquipmentMarker(디지털 트윈)를 찾아 그 앞으로 페이드+텔레포트한 뒤에야
