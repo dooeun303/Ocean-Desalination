@@ -35,10 +35,10 @@ public class ModelRotateTestPanel : MonoBehaviour
     // ControllerGltfExporter.cs 참고). AR쪽 ModelRotateTestDemo와 동일 URL.
     // 2026-08-25 시연 시나리오가 "컨트롤러 건전지 교체"에서 "고압펌프 베어링 마모 점검"으로
     // 바뀌면서 다시 펌프 모델로 - AR쪽 ModelRotateTestDemo.TestModelUrl과 반드시 동일해야 함.
-    const string TestModelUrl = "http://192.168.0.66:3000/uploads/pump_export.glb";
+    static readonly string TestModelUrl = ServerConfig.BaseUrl + "/uploads/pump_export.glb";
     // 베어링 인출/유격 측정 단계에서 펌프 전체 대신 보여줄 단독 베어링 모델 - AR쪽
     // ModelRotateTestDemo.BearingModelUrl과 반드시 동일해야 함.
-    const string BearingModelUrl = "http://192.168.0.66:3000/uploads/bearing_export.glb";
+    static readonly string BearingModelUrl = ServerConfig.BaseUrl + "/uploads/bearing_export.glb";
     const float TargetSize = 0.5f;
     const float SendInterval = 1f / 15f; // 15Hz로 스트리밍 - 너무 자주 보내면 서버/소켓에 부담
     const float PointSendInterval = 1f / 15f;

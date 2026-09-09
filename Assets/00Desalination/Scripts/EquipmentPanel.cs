@@ -6,9 +6,8 @@ using Newtonsoft.Json;
 
 public class EquipmentPanel : MonoBehaviour
 {
-    [Header("서버 주소")]
-    public string serverUrl = "http://192.168.0.66:3000/api/equipment";
-    public string sensorServerUrl = "http://192.168.0.66:3000/api/inspections/equipment";
+    public string serverUrl => ServerConfig.BaseUrl + "/api/equipment";
+    public string sensorServerUrl => ServerConfig.BaseUrl + "/api/equipment";
 
     // 장비 정보 텍스트
     private TextMeshProUGUI nameText;

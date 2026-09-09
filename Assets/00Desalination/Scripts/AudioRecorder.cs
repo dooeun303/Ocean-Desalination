@@ -3,17 +3,16 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// È­»óÅëÈ­ Áß ¸¶ÀÌÅ© ³ìÀ½ + ¼­¹ö Àü¼Û ½ºÅ©¸³Æ®
+// È­ï¿½ï¿½ï¿½ï¿½È­ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Å© ï¿½ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½Æ®
 public class AudioRecorder : MonoBehaviour
 {
     public static AudioRecorder Instance;
 
-    [Header("¼­¹ö ÁÖ¼Ò")]
-    public string serverUrl = "http://192.168.0.66:3000/api/summary";
+    public string serverUrl => ServerConfig.BaseUrl + "/api/ai/voice-summary";
 
-    [Header("³ìÀ½ ¼³Á¤")]
-    public int sampleRate = 16000;   // Whisper ±ÇÀå »ùÇÃ·¹ÀÌÆ®
-    public int maxDuration = 500;    // ÃÖ´ë ³ìÀ½ ½Ã°£ (ÃÊ)
+    [Header("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
+    public int sampleRate = 16000;   // Whisper ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ã·ï¿½ï¿½ï¿½Æ®
+    public int maxDuration = 500;    // ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ (ï¿½ï¿½)
 
     private AudioClip _recording;
     private bool _isRecording = false;
@@ -24,22 +23,22 @@ public class AudioRecorder : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    // ³ìÀ½ ½ÃÀÛ (È­»óÅëÈ­ ½ÃÀÛ ½Ã È£Ãâ)
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (È­ï¿½ï¿½ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ È£ï¿½ï¿½)
     public void StartRecording()
     {
         if (_isRecording) return;
 
         _recording = Microphone.Start(null, false, maxDuration, sampleRate);
         _isRecording = true;
-        Debug.Log("[AudioRecorder] ³ìÀ½ ½ÃÀÛ");
+        Debug.Log("[AudioRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
     }
 
-    // ³ìÀ½ Á¾·á + ¼­¹ö Àü¼Û (È­»óÅëÈ­ Á¾·á ½Ã È£Ãâ)
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (È­ï¿½ï¿½ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ È£ï¿½ï¿½)
     public void StopAndSend(string maintenanceId = "")
     {
         if (!_isRecording)
         {
-            Debug.LogWarning("[AudioRecorder] ³ìÀ½ ÁßÀÌ ¾Æ´Õ´Ï´Ù.");
+            Debug.LogWarning("[AudioRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´Õ´Ï´ï¿½.");
             return;
         }
 
@@ -49,21 +48,21 @@ public class AudioRecorder : MonoBehaviour
 
         if (position <= 0)
         {
-            Debug.LogWarning("[AudioRecorder] ³ìÀ½ µ¥ÀÌÅÍ ¾øÀ½");
+            Debug.LogWarning("[AudioRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
             return;
         }
 
-        // ½ÇÁ¦ ³ìÀ½µÈ ±æÀÌ¸¸Å­ ÀÚ¸£±â
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¸ï¿½Å­ ï¿½Ú¸ï¿½ï¿½ï¿½
         var samples = new float[position * _recording.channels];
         _recording.GetData(samples, 0);
 
         StartCoroutine(SendAudio(samples, maintenanceId));
     }
 
-    // WAV º¯È¯ + ¼­¹ö Àü¼Û
+    // WAV ï¿½ï¿½È¯ + ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     private IEnumerator SendAudio(float[] samples, string maintenanceId = "")
     {
-        Debug.Log("[AudioRecorder] ¼­¹ö Àü¼Û Áß...");
+        Debug.Log("[AudioRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½...");
 
         byte[] wavData = ConvertToWav(samples, _recording.channels, sampleRate);
 
@@ -80,23 +79,23 @@ public class AudioRecorder : MonoBehaviour
             var response = JsonUtility.FromJson<SummaryResponse>(req.downloadHandler.text);
             if (response.success)
             {
-                Debug.Log("[AudioRecorder] ¿ä¾à ¿Ï·á");
+                Debug.Log("[AudioRecorder] ï¿½ï¿½ï¿½ ï¿½Ï·ï¿½");
                 SummaryDisplay.Instance?.ShowSummary(response.summary, response.transcript);
             }
             else
             {
-                Debug.LogError("[AudioRecorder] ¿ä¾à ½ÇÆÐ: " + response.message);
-                SummaryDisplay.Instance?.ShowError("¿ä¾à¿¡ ½ÇÆÐÇß½À´Ï´Ù.");
+                Debug.LogError("[AudioRecorder] ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: " + response.message);
+                SummaryDisplay.Instance?.ShowError("ï¿½ï¿½à¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½.");
             }
         }
         else
         {
-            Debug.LogError("[AudioRecorder] Àü¼Û ½ÇÆÐ: " + req.error);
-            SummaryDisplay.Instance?.ShowError("¼­¹ö ¿¬°á¿¡ ½ÇÆÐÇß½À´Ï´Ù.");
+            Debug.LogError("[AudioRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: " + req.error);
+            SummaryDisplay.Instance?.ShowError("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½á¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½.");
         }
     }
 
-    // float[] ¡æ WAV º¯È¯
+    // float[] ï¿½ï¿½ WAV ï¿½ï¿½È¯
     private byte[] ConvertToWav(float[] samples, int channels, int sampleRate)
     {
         using var stream = new MemoryStream();
@@ -105,7 +104,7 @@ public class AudioRecorder : MonoBehaviour
         int sampleCount = samples.Length;
         int byteCount = sampleCount * 2; // 16bit = 2bytes
 
-        // WAV Çì´õ
+        // WAV ï¿½ï¿½ï¿½
         writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
         writer.Write(36 + byteCount);
         writer.Write(System.Text.Encoding.ASCII.GetBytes("WAVE"));
@@ -120,7 +119,7 @@ public class AudioRecorder : MonoBehaviour
         writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));
         writer.Write(byteCount);
 
-        // »ùÇÃ µ¥ÀÌÅÍ
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         foreach (var sample in samples)
         {
             short s = (short)(Mathf.Clamp(sample, -1f, 1f) * short.MaxValue);

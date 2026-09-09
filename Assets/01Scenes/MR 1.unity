@@ -1546,7 +1546,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 91459ab4056dd224eb8646f9cbc9aa26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GetAllAlarm
-  serverUrl: http://192.168.0.66:3000/api/alarm
   activeOnly: 0
   alarmItemPrefab: {fileID: 7213059354921185597, guid: 912ae1db6ac5cbc40aad931ab44a43d7, type: 3}
   itemContainer: {fileID: 1244115804}
@@ -2329,7 +2328,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d28f468862faf06479493599e985d01f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MaintenanceList
-  serverUrl: http://192.168.0.66:3000/api/maintenance
   itemPrefab: {fileID: 9219141814069543774, guid: fd93e4950b434c24eb900ce2833cacc1, type: 3}
   itemContainer: {fileID: 1989638917}
   popup: {fileID: 1111778876}
@@ -22927,7 +22925,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29e12b42941cb1846b331a9b94949cb6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SupportCallList
-  serverUrl: http://192.168.0.66:3000/api/support-calls
   itemPrefab: {fileID: 764312190159841797, guid: 694c40973e8a9394db3b46dd6cf7bf5b, type: 3}
   itemContainer: {fileID: 471371740}
   statsText: {fileID: 1153103069}
@@ -24697,7 +24694,6 @@ MonoBehaviour:
   _appID: 5b6baf59793d494f95554d1246847731
   _token: 
   _channelName: 
-  _tokenServerUrl: http://192.168.0.66:3000
   DebugWebCamPreview: {fileID: 0}
   DebugStateText: {fileID: 196316077}
   remoteVideoContainer: {fileID: 183847808}
@@ -59085,7 +59081,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4435c1067be7b549af8c067ff74bb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VideoCallSignalingMR
-  serverUrl: ws://192.168.0.66:3000?platform=MR
 --- !u!1 &1009889798
 GameObject:
   m_ObjectHideFlags: 0
@@ -64196,7 +64191,6 @@ MonoBehaviour:
   penWidth: 5
   checkSprite: {fileID: 21300000, guid: 442ff27cadb6e2c4884348c7a7e317f0, type: 3}
   stickerPrefab: {fileID: 6224018199671494787, guid: 17110696f1a2bbb499f7193c58327385, type: 3}
-  serverUrl: http://192.168.0.66:3000/api/files/instruction
   alertPanel: {fileID: 1388125815}
   alertText: {fileID: 1070083927}
 --- !u!114 &1107618320
@@ -64842,7 +64836,6 @@ MonoBehaviour:
   moveConfirmNoButton: {fileID: 229069069}
   saveConfirmYesButton: {fileID: 1577873701}
   saveConfirmNoButton: {fileID: 1625912425}
-  serverUrl: http://192.168.0.66:3000/api/maintenance/
   xrRig: {fileID: 1412544918}
   menuPanelToHide: {fileID: 910723504}
   maintenanceListPanelToHide: {fileID: 37799997}
@@ -100049,7 +100042,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a86dcc355e91294aa8367846595baf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InspectionList
-  baseUrl: http://192.168.0.66:3000
   itemContainer: {fileID: 1949628074}
   itemPrefab: {fileID: 7213059354921185597, guid: 892b89848e909414abd767b6d0c27156, type: 3}
   titleText: {fileID: 1083226575}
@@ -106449,7 +106441,6 @@ MonoBehaviour:
   micGain: 8
   historyResultText: {fileID: 101144934}
   historyNoteText: {fileID: 80851702}
-  serverBaseUrl: http://192.168.0.66:3000
 --- !u!1 &1790984347
 GameObject:
   m_ObjectHideFlags: 0
@@ -112898,7 +112889,6 @@ MonoBehaviour:
   _appID: 
   _token: 
   _channelName: 
-  _tokenServerUrl: http://192.168.0.66:3000
   DebugWebCamPreview: {fileID: 0}
   DebugStateText: {fileID: 0}
   remoteVideoContainer: {fileID: 0}
@@ -113276,7 +113266,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2eb7b7b6de8318f439be93699b3ffa5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InfoShareManager
-  serverUrl: http://192.168.0.66:3000/api/files
   itemContainer: {fileID: 508842017}
   itemPrefab: {fileID: 1580487854440010336, guid: a104573461cec0142bb83982f3e71c9c, type: 3}
   rootCanvas: {fileID: 1911264574}
@@ -116846,7 +116835,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f10010fe2f9cc94c8de71686f0ff3d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioRecorder
-  serverUrl: http://192.168.0.66:3000/api/summary
   sampleRate: 16000
   maxDuration: 500
 --- !u!1 &1997515257
@@ -138166,8 +138154,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e78d8cb40f1d41448bca1cd5f54bd5ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentPanel
-  serverUrl: http://192.168.0.66:3000/api/equipment
-  sensorServerUrl: http://192.168.0.66:3000/api/inspections/equipment
 --- !u!1 &4421443258565464690
 GameObject:
   m_ObjectHideFlags: 0
@@ -142151,8 +142137,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e78d8cb40f1d41448bca1cd5f54bd5ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentPanel
-  serverUrl: http://192.168.0.66:3000/api/equipment
-  sensorServerUrl: http://192.168.0.66:3000/api/inspections/equipment
 --- !u!1 &5988881255725745498
 GameObject:
   m_ObjectHideFlags: 0
@@ -146222,8 +146206,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e78d8cb40f1d41448bca1cd5f54bd5ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentPanel
-  serverUrl: http://192.168.0.66:3000/api/equipment
-  sensorServerUrl: http://192.168.0.66:3000/api/inspections/equipment
 --- !u!114 &7445514652706503159
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -146870,8 +146852,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e78d8cb40f1d41448bca1cd5f54bd5ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentPanel
-  serverUrl: http://192.168.0.66:3000/api/equipment
-  sensorServerUrl: http://192.168.0.66:3000/api/inspections/equipment
 --- !u!33 &7512248103998025367
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -148194,8 +148174,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e78d8cb40f1d41448bca1cd5f54bd5ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentPanel
-  serverUrl: http://192.168.0.66:3000/api/equipment
-  sensorServerUrl: http://192.168.0.66:3000/api/inspections/equipment
 --- !u!114 &7850676680649548778
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148851,8 +148829,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e78d8cb40f1d41448bca1cd5f54bd5ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentPanel
-  serverUrl: http://192.168.0.66:3000/api/equipment
-  sensorServerUrl: http://192.168.0.66:3000/api/inspections/equipment
 --- !u!33 &7936806182285441454
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -152204,8 +152180,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e78d8cb40f1d41448bca1cd5f54bd5ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentPanel
-  serverUrl: http://192.168.0.66:3000/api/equipment
-  sensorServerUrl: http://192.168.0.66:3000/api/inspections/equipment
 --- !u!33 &8994953449421862436
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -152532,8 +152506,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e78d8cb40f1d41448bca1cd5f54bd5ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentPanel
-  serverUrl: http://192.168.0.66:3000/api/equipment
-  sensorServerUrl: http://192.168.0.66:3000/api/inspections/equipment
 --- !u!4 &9129275838737983759
 Transform:
   m_ObjectHideFlags: 0

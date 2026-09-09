@@ -11,17 +11,16 @@ public class InspectionList : MonoBehaviour
 {
     public static InspectionList Instance;
 
-    [Header("¼­¹ö ¼³Á¤")]
-    public string baseUrl = "http://192.168.0.66:3000";
+    public string baseUrl => ServerConfig.BaseUrl;
 
-    [Header("¸ñ·Ï UI")]
+    [Header("ï¿½ï¿½ï¿½ UI")]
     public Transform itemContainer;
     public GameObject itemPrefab;
     public TMP_Text titleText;
     public TMP_Text descriptionText;
     public GameObject loadingIndicator;
 
-    [Header("ÆäÀÌÁö³×ÀÌ¼Ç")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½")]
     public Button prevButton;
     public Button nextButton;
     public TMP_Text pageText;
@@ -59,7 +58,7 @@ public class InspectionList : MonoBehaviour
 
                 if (!response.success || response.data == null)
                 {
-                    if (descriptionText) descriptionText.text = "µ¥ÀÌÅÍ¸¦ ºÒ·¯¿Ã ¼ö ¾ø½À´Ï´Ù.";
+                    if (descriptionText) descriptionText.text = "ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½Ò·ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.";
                     return;
                 }
 
@@ -70,16 +69,16 @@ public class InspectionList : MonoBehaviour
                 int pending = _allItems.FindAll(i => i.inspection_status == "pending").Count;
                 int completed = _allItems.FindAll(i => i.inspection_status == "completed").Count;
 
-                if (titleText) titleText.text = "¿À´ÃÀÇ ¿ø°ÝÁ¡°Ë";
+                if (titleText) titleText.text = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½";
                 if (descriptionText) descriptionText.text =
-                    $"ÃÑ {total}°Ç ¡¤ ÁøÇàÁß {pending}°Ç ¡¤ ´ë±â {total - completed - pending}°Ç";
+                    $"ï¿½ï¿½ {total}ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ {pending}ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ {total - completed - pending}ï¿½ï¿½";
 
                 RenderPage();
             },
             onError: (err) =>
             {
                 if (loadingIndicator) loadingIndicator.SetActive(false);
-                if (descriptionText) descriptionText.text = "¼­¹ö ¿¬°á ½ÇÆÐ";
+                if (descriptionText) descriptionText.text = "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½";
                 Debug.LogError("[InspectionList] " + err);
             }
         ));
@@ -102,7 +101,7 @@ public class InspectionList : MonoBehaviour
         }
 
         if (pageText)
-            pageText.text = total == 0 ? "µ¥ÀÌÅÍ ¾øÀ½" : $"{_currentPage + 1} / {totalPages}";
+            pageText.text = total == 0 ? "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½" : $"{_currentPage + 1} / {totalPages}";
 
         if (prevButton) prevButton.interactable = _currentPage > 0;
         if (nextButton) nextButton.interactable = _currentPage < totalPages - 1;
@@ -122,7 +121,7 @@ public class InspectionList : MonoBehaviour
     public void GetSensors(MonoBehaviour caller, string equipmentId, Action<SensorListResponse> onSuccess, Action<string> onError)
     {
         caller.StartCoroutine(Get<SensorListResponse>(
-            $"/api/inspections/equipment/{equipmentId}/sensors", onSuccess, onError));
+            $"/api/equipment/{equipmentId}/sensors", onSuccess, onError));
     }
 
     public void SaveResult(MonoBehaviour caller, SaveInspectionRequest request, Action<SaveInspectionResponse> onSuccess, Action<string> onError)
@@ -139,9 +138,9 @@ public class InspectionList : MonoBehaviour
         if (req.result == UnityWebRequest.Result.Success)
         {
             try { onSuccess?.Invoke(JsonUtility.FromJson<T>(req.downloadHandler.text)); }
-            catch (Exception e) { onError?.Invoke("JSON ÆÄ½Ì ¿À·ù: " + e.Message); }
+            catch (Exception e) { onError?.Invoke("JSON ï¿½Ä½ï¿½ ï¿½ï¿½ï¿½ï¿½: " + e.Message); }
         }
-        else onError?.Invoke($"GET {path} ½ÇÆÐ: {req.error}");
+        else onError?.Invoke($"GET {path} ï¿½ï¿½ï¿½ï¿½: {req.error}");
     }
 
 
@@ -158,8 +157,8 @@ public class InspectionList : MonoBehaviour
         if (req.result == UnityWebRequest.Result.Success)
         {
             try { onSuccess?.Invoke(JsonUtility.FromJson<T>(req.downloadHandler.text)); }
-            catch (Exception e) { onError?.Invoke("JSON ÆÄ½Ì ¿À·ù: " + e.Message); }
+            catch (Exception e) { onError?.Invoke("JSON ï¿½Ä½ï¿½ ï¿½ï¿½ï¿½ï¿½: " + e.Message); }
         }
-        else onError?.Invoke($"PATCH {path} ½ÇÆÐ: {req.error}");
+        else onError?.Invoke($"PATCH {path} ï¿½ï¿½ï¿½ï¿½: {req.error}");
     }
 }

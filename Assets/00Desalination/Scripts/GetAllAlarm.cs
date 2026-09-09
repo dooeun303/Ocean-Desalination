@@ -7,83 +7,82 @@ using TMPro;
 
 public class GetAllAlarm : MonoBehaviour
 {
-    [Header("¼­¹ö ÁÖ¼Ò")]
-    public string serverUrl = "http://192.168.0.66:3000/api/alarm";
+    public string serverUrl => ServerConfig.BaseUrl + "/api/alarms";
 
-    [Header("ÅÇ")]
+    [Header("ï¿½ï¿½")]
     public bool activeOnly = false;
 
-    [Header("¾ÆÀÌÅÛ ÇÁ¸®ÆÕ & ºÎ¸ð ¿ÀºêÁ§Æ®")]
-    public GameObject alarmItemPrefab;  // ¾Ë¶÷¸®½ºÆ®(1) ÇÁ¸®ÆÕ
-    public Transform itemContainer;     // ¾ÆÀÌÅÛµéÀÌ µé¾î°¥ ºÎ¸ð ¿ÀºêÁ§Æ®
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ & ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®")]
+    public GameObject alarmItemPrefab;  // ï¿½Ë¶ï¿½ï¿½ï¿½ï¿½ï¿½Æ®(1) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    public Transform itemContainer;     // ï¿½ï¿½ï¿½ï¿½ï¿½Ûµï¿½ï¿½ï¿½ ï¿½ï¿½î°¥ ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
 
-    [Header("ÆäÀÌÁö ¹öÆ°")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ°")]
     public Button prevButton;
     public Button nextButton;
 
-    [Header("ÆäÀÌÁö Ç¥½Ã ÅØ½ºÆ® (¼±ÅÃ)")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ ï¿½Ø½ï¿½Æ® (ï¿½ï¿½ï¿½ï¿½)")]
     public TMP_Text pageText;
 
     
-    private List<AlarmData> _alarms = new List<AlarmData>(); // DB¿¡ ÀÖ´Â ¾Ë¶÷ ¸®½ºÆ®
-    private int _currentPage = 0; // ÇöÀç ÆäÀÌÁö
-    private const int ITEMS_PER_PAGE = 4; // ÆäÀÌÁö´ç Ç×¸ñ¼ö 4
+    private List<AlarmData> _alarms = new List<AlarmData>(); // DBï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½Ë¶ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®
+    private int _currentPage = 0; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    private const int ITEMS_PER_PAGE = 4; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ 4
 
-    // ÆÐ³Î¿¡ ºÙÀÎ ½ºÅ©¸³Æ®´Ï±î, ÆÐ³ÎÀÌ ÄÑÁö¸é ÄÚ·çÆ¾ÀÌ ½ÇÇàµÊ
+    // ï¿½Ð³Î¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½Æ®ï¿½Ï±ï¿½, ï¿½Ð³ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ú·ï¿½Æ¾ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
     void OnEnable()
     {
         StartCoroutine(FetchAlarms());
     }
 
-    // »õ·Î°íÄ§ ¹öÆ° ´©¸¦¶§µµ, ÄÚ·çÆ¾ÀÌ ½ÇÇàµÊ
+    // ï¿½ï¿½ï¿½Î°ï¿½Ä§ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½Ú·ï¿½Æ¾ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
     public void OnRefreshButton()
     {
         StartCoroutine(FetchAlarms());
     }
 
-    // ¼­¹ö¿¡¼­ ¾Ë¶÷ ¸ñ·Ï Á¶È¸
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë¶ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½È¸
     public IEnumerator FetchAlarms()
     {
-        // ¼­¹ö url
+        // ï¿½ï¿½ï¿½ï¿½ url
         string url = activeOnly ? serverUrl + "?active=true" : serverUrl;
 
-        // ¼­¹ö url ·Î get ¿äÃ»
+        // ï¿½ï¿½ï¿½ï¿½ url ï¿½ï¿½ get ï¿½ï¿½Ã»
         using (UnityWebRequest req = UnityWebRequest.Get(url))
         {
-            // ¿äÃ»À» ¼­¹ö·Î º¸³¿
+            // ï¿½ï¿½Ã»ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             yield return req.SendWebRequest();
 
             if (req.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError("[GetAllAlarm] ¿äÃ» ½ÇÆÐ: " + req.error);
+                Debug.LogError("[GetAllAlarm] ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½: " + req.error);
                 yield break;
             }
 
-            // get¿äÃ» ÇØ¼­ ¹Þ¾Æ¿Â ¸ðµç ¾Ë¶÷ µ¥ÀÌÅÍ¸¦ JSON -> AlarmListResponse ·Î º¯È¯ÇÔ
+            // getï¿½ï¿½Ã» ï¿½Ø¼ï¿½ ï¿½Þ¾Æ¿ï¿½ ï¿½ï¿½ï¿½ ï¿½Ë¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ JSON -> AlarmListResponse ï¿½ï¿½ ï¿½ï¿½È¯ï¿½ï¿½
             AlarmListResponse response = JsonUtility.FromJson<AlarmListResponse>(req.downloadHandler.text);
 
             if (response == null || !response.success)
             {
-                Debug.LogError("[GetAllAlarm] ÀÀ´ä ÆÄ½Ì ½ÇÆÐ");
+                Debug.LogError("[GetAllAlarm] ï¿½ï¿½ï¿½ï¿½ ï¿½Ä½ï¿½ ï¿½ï¿½ï¿½ï¿½");
                 yield break;
             }
 
-            // alarms ´Â responseÀÇ data
+            // alarms ï¿½ï¿½ responseï¿½ï¿½ data
             _alarms = response.data;
-            _currentPage = 0; // ÇöÀç ÆäÀÌÁö 0À¸·Î ¼³Á¤ÇÏ°í ÆäÀÌÁö ·»´õ¸µÇÏ±â
+            _currentPage = 0; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½
             RenderPage();
         }
     }
 
 
-    // ÇöÀç ÆäÀÌÁö ·»´õ¸µ
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     void RenderPage()
     {
-        // ±âÁ¸ ¾ÆÀÌÅÛ ¸ðµÎ Á¦°Å
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         foreach (Transform child in itemContainer)
             Destroy(child.gameObject);
 
-        // ÇöÀç ÆäÀÌÁö¿¡ ÇØ´çÇÏ´Â ¾Ë¶÷ ½½¶óÀÌ½º
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø´ï¿½ï¿½Ï´ï¿½ ï¿½Ë¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì½ï¿½
         int startIndex = _currentPage * ITEMS_PER_PAGE;
         int endIndex = Mathf.Min(startIndex + ITEMS_PER_PAGE, _alarms.Count);
 
@@ -92,54 +91,54 @@ public class GetAllAlarm : MonoBehaviour
         {
             AlarmData alarm = _alarms[i];
 
-            // itemContainer ¾È¿¡ alarmItemPrefabÀ» »ý¼º
+            // itemContainer ï¿½È¿ï¿½ alarmItemPrefabï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             GameObject item = Instantiate(alarmItemPrefab, itemContainer);
 
-            // alarmItemPrefab¿¡ alarmItemUI ½ºÅ©¸³Æ®¸¦ Ã£À½
+            // alarmItemPrefabï¿½ï¿½ alarmItemUI ï¿½ï¿½Å©ï¿½ï¿½Æ®ï¿½ï¿½ Ã£ï¿½ï¿½
             AlarmItemUI itemUI = item.GetComponent<AlarmItemUI>();
 
             if (itemUI != null)
-                itemUI.SetData(alarm); // alarmItemUI ½ºÅ©¸³Æ®ÀÇ SetData ÇÔ¼ö¿¡ alarm ÇöÀç alarm À» Àü´Þ
+                itemUI.SetData(alarm); // alarmItemUI ï¿½ï¿½Å©ï¿½ï¿½Æ®ï¿½ï¿½ SetData ï¿½Ô¼ï¿½ï¿½ï¿½ alarm ï¿½ï¿½ï¿½ï¿½ alarm ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         }
 
-        // ¹öÆ° È°¼ºÈ­ ¿©ºÎ
+        // ï¿½ï¿½Æ° È°ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½
         int totalPages = Mathf.CeilToInt((float)_alarms.Count / ITEMS_PER_PAGE);
         prevButton.interactable = _currentPage > 0;
         nextButton.interactable = _currentPage < totalPages - 1;
 
-        // ÆäÀÌÁö ÅØ½ºÆ® (¼±ÅÃ)
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½Æ® (ï¿½ï¿½ï¿½ï¿½)
         if (pageText != null)
-            pageText.text = _alarms.Count == 0 ? "¾Ë¶÷ ¾øÀ½" : $"{_currentPage + 1} / {totalPages}";
+            pageText.text = _alarms.Count == 0 ? "ï¿½Ë¶ï¿½ ï¿½ï¿½ï¿½ï¿½" : $"{_currentPage + 1} / {totalPages}";
     }
     
 
-    // < ¹öÆ°(ÀÌÀü)
+    // < ï¿½ï¿½Æ°(ï¿½ï¿½ï¿½ï¿½)
     public void OnPrevPage()
     {
-        // ÇöÀç ÆäÀÌÁö°¡ 0º¸´Ù Å©¸é
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0ï¿½ï¿½ï¿½ï¿½ Å©ï¿½ï¿½
         if (_currentPage > 0)
         {
-            // Çö ÆäÀÌÁö -1
+            // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ -1
             _currentPage--;
             RenderPage();
         }
     }
 
-    // > ¹öÆ°(´ÙÀ½)
+    // > ï¿½ï¿½Æ°(ï¿½ï¿½ï¿½ï¿½)
     public void OnNextPage()
     {
-        // ÃÑ ¾Ë¶÷¼ö /4 = ¸ðµç ÆäÀÌÁö¼ö
+        // ï¿½ï¿½ ï¿½Ë¶ï¿½ï¿½ï¿½ /4 = ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         int totalPages = Mathf.CeilToInt((float)_alarms.Count / ITEMS_PER_PAGE);
-        if (_currentPage < totalPages - 1) // ÇöÀç ÆäÀÌÁö°¡ ¸ðµç ÆäÀÌÁö-1 º¸´Ù ÀÛÀ¸¸é
+        if (_currentPage < totalPages - 1) // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½-1 ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         {
-            // Çö ÆäÀÌÁö +1
+            // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ +1
             _currentPage++;
             RenderPage();
         }
     }
 }
 
-// ¼­¹ö ÀÀ´ä ÀüÃ¼¸¦ ´ã´Â Å¬·¡½º
+// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½
 [System.Serializable]
 public class AlarmListResponse
 {

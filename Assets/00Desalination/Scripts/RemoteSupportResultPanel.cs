@@ -6,47 +6,46 @@ using UnityEngine.UI;
 using UnityEngine.Networking;
 using TMPro;
 
-// ¿ø°ÝÁö¿ø °á°ú ÀúÀå ÆÐ³Î (MR).
-// È­»óÅëÈ­(¿ø°ÝÁö¿ø) Á¾·á ½Ã(AR/MR ¹«°ü) Ç¥½Ã ¡æ °á°ú ¼±ÅÃ + STT À½¼º±â·Ï ¡æ ¼­¹ö ÀúÀå.
-// * ½Å±Ô ÆÄÀÏ. ±âÁ¸ ½ºÅ©¸³Æ®/¾ÀÀº °Çµå¸®Áö ¾Ê´Â´Ù. ¸ðµç ÂüÁ¶´Â Inspector¿¡¼­ ¹è¼±.
-// * ÀÌ ÄÄÆ÷³ÍÆ®´Â "Ç×»ó È°¼º" GameObject¿¡ ºÙÀÌ°í, panelRoot ¿¡ "¿ø°ÝÁö¿ø °á°ú ÀúÀå" ÆÐ³ÎÀ» ³Ö´Â´Ù.
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ð³ï¿½ (MR).
+// È­ï¿½ï¿½ï¿½ï¿½È­(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½) ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½(AR/MR ï¿½ï¿½ï¿½ï¿½) Ç¥ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ + STT ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
+// * ï¿½Å±ï¿½ ï¿½ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½Æ®/ï¿½ï¿½ï¿½ï¿½ ï¿½Çµå¸®ï¿½ï¿½ ï¿½Ê´Â´ï¿½. ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Inspectorï¿½ï¿½ï¿½ï¿½ ï¿½è¼±.
+// * ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ "ï¿½×»ï¿½ È°ï¿½ï¿½" GameObjectï¿½ï¿½ ï¿½ï¿½ï¿½Ì°ï¿½, panelRoot ï¿½ï¿½ "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½" ï¿½Ð³ï¿½ï¿½ï¿½ ï¿½Ö´Â´ï¿½.
 public class RemoteSupportResultPanel : MonoBehaviour
 {
-    [Header("¿¬°áµÈ À¯Áöº¸¼ö °Ç Ç¥½Ã (¼±ÅÃ)")]
-    [SerializeField] TMP_Text contextText;   // ¿¹: "ÆßÇÁ P-101 ¡¤ º£¾î¸µ ¸¶¸ð ÀÇ½É Á¡°Ë"
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ç¥ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½)")]
+    [SerializeField] TMP_Text contextText;   // ï¿½ï¿½: "ï¿½ï¿½ï¿½ï¿½ P-101 ï¿½ï¿½ ï¿½ï¿½ï¿½î¸µ ï¿½ï¿½ï¿½ï¿½ ï¿½Ç½ï¿½ ï¿½ï¿½ï¿½ï¿½"
 
     string _maintenanceLogId;
 
-    [Header("ÆÐ³Î")]
-    [SerializeField] GameObject panelRoot;       // "¿ø°ÝÁö¿ø °á°ú ÀúÀå" (ÅëÈ­ Á¾·á ½Ã ÄÑÁü)
-    [SerializeField] GameObject itemContainer;   // "¾ÆÀÌÅÛ ÄÁÅ×ÀÌ³Ê" (ÀÔ·Â Æû)
-    [SerializeField] GameObject resultHistory;   // "°á°ú³»¿ª" (ÀúÀå ÈÄ Ç¥½Ã)
-    [SerializeField] float placeDistance = 1.5f; // ÅëÈ­ Á¾·á ½Ã Ä«¸Þ¶ó ¾Õ ¸î m ¿¡ ¶ç¿ïÁö
+    [Header("ï¿½Ð³ï¿½")]
+    [SerializeField] GameObject panelRoot;       // "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½" (ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    [SerializeField] GameObject itemContainer;   // "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì³ï¿½" (ï¿½Ô·ï¿½ ï¿½ï¿½)
+    [SerializeField] GameObject resultHistory;   // "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ç¥ï¿½ï¿½)
+    [SerializeField] float placeDistance = 1.5f; // ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ ï¿½ï¿½ m ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
 
-    [Header("°á°ú ¹öÆ° ¼±ÅÃ Ç¥½Ã (¶óµð¿À)")]
-    [SerializeField] Image[] resultButtonGraphics = new Image[4]; // ÇØ°á¿Ï·á¡¤Ãë¼Ò¡¤ÀçÁö¿ø¿¹Á¤¡¤±âÅ¸ ¹öÆ°ÀÇ Image (¼ø¼­´ë·Î)
-    [SerializeField] Color selectedColor = new Color(0.20f, 0.55f, 0.95f); // ¼±ÅÃµÈ ¹öÆ° »ö
-    [SerializeField] Color normalColor = Color.white;                     // ¾È ¼±ÅÃµÈ ¹öÆ° »ö
-    [SerializeField] GameObject[] selectedMarks = new GameObject[0];          // (¼±ÅÃ) ¹öÆ°º° Ã¼Å© ¾ÆÀÌÄÜ µî. ¹öÆ° º»Ã¼ ³ÖÁö ¸» °Í
+    [Header("ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½)")]
+    [SerializeField] Image[] resultButtonGraphics = new Image[4]; // ï¿½Ø°ï¿½Ï·á¡¤ï¿½ï¿½Ò¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å¸ ï¿½ï¿½Æ°ï¿½ï¿½ Image (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+    [SerializeField] Color selectedColor = new Color(0.20f, 0.55f, 0.95f); // ï¿½ï¿½ï¿½Ãµï¿½ ï¿½ï¿½Æ° ï¿½ï¿½
+    [SerializeField] Color normalColor = Color.white;                     // ï¿½ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ ï¿½ï¿½Æ° ï¿½ï¿½
+    [SerializeField] GameObject[] selectedMarks = new GameObject[0];          // (ï¿½ï¿½ï¿½ï¿½) ï¿½ï¿½Æ°ï¿½ï¿½ Ã¼Å© ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½. ï¿½ï¿½Æ° ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½
 
-    [Header("À½¼º ±â·Ï")]
-    [SerializeField] TMP_Text recButtonLabel;    // "À½¼º ±â·Ï ½ÃÀÛ" ¹öÆ° ¶óº§ (¼±ÅÃ)
-    [SerializeField] Image progressBar;       // Image Type=Filled, Fill Method=Horizontal (VU ¹ÌÅÍ)
-    [SerializeField] TMP_Text statusText;        // "À½¼º ±â·Ï »óÅÂ"
-    [SerializeField] TMP_Text exampleText;       // "À½¼º±â·Ï ¿¹½Ã"
+    [Header("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½")]
+    [SerializeField] TMP_Text recButtonLabel;    // "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½" ï¿½ï¿½Æ° ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½)
+    [SerializeField] Image progressBar;       // Image Type=Filled, Fill Method=Horizontal (VU ï¿½ï¿½ï¿½ï¿½)
+    [SerializeField] TMP_Text statusText;        // "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½"
+    [SerializeField] TMP_Text exampleText;       // "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½"
     [SerializeField] int maxRecordSeconds = 60;
     [SerializeField] int sampleRate = 16000;
-    [SerializeField] float micGain = 8f;      // À½·® ¹ÌÅÍ °¨µµ (¼Ò¸® ÀÛÀ¸¸é 15~20 À¸·Î)
+    [SerializeField] float micGain = 8f;      // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Ò¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 15~20 ï¿½ï¿½ï¿½ï¿½)
 
-    [Header("°á°ú³»¿ª Ã¤¿ì±â (¼±ÅÃ)")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¤ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½)")]
     [SerializeField] TMP_Text historyResultText;
     [SerializeField] TMP_Text historyNoteText;
 
-    [Header("¼­¹ö")]
-    [SerializeField] string serverBaseUrl = "http://192.168.0.66:3000";
+    string serverBaseUrl => ServerConfig.BaseUrl;
 
-    static readonly string[] CODES = { "RESOLVED", "CANCELED", "RESUPPORT", "ETC" };
-    static readonly string[] LABELS = { "ÇØ°á ¿Ï·á", "Ãë¼Ò", "ÀçÁö¿ø ¿¹Á¤", "±âÅ¸" };
+    static readonly string[] CODES = { "RSUP01", "RSUP02", "RSUP03", "RSUP04" }; // system_code RESP11
+    static readonly string[] LABELS = { "ï¿½Ø°ï¿½ ï¿½Ï·ï¿½", "ï¿½ï¿½ï¿½", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½", "ï¿½ï¿½Å¸" };
 
     int _sel = -1;
     string _supportCallId;
@@ -63,7 +62,7 @@ public class RemoteSupportResultPanel : MonoBehaviour
     void OnEnable()
     {
         VideoCallSignalingMR.OnCallEnded += HandleCallEnded;
-        Debug.Log("[RemoteSupport] OnCallEnded ±¸µ¶µÊ (GO: " + gameObject.name +
+        Debug.Log("[RemoteSupport] OnCallEnded ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (GO: " + gameObject.name +
                   " / activeInHierarchy: " + gameObject.activeInHierarchy + ")");
     }
 
@@ -72,11 +71,11 @@ public class RemoteSupportResultPanel : MonoBehaviour
         VideoCallSignalingMR.OnCallEnded -= HandleCallEnded;
     }
 
-    // ¦¡¦¡ ÅëÈ­ Á¾·á ¡æ ÆÐ³Î Ç¥½Ã ¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ð³ï¿½ Ç¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     void HandleCallEnded(string channelName)
     {
-        Debug.Log("[RemoteSupport] ÅëÈ­ Á¾·á ¼ö½Å ¡æ ÆÐ³Î ÄÑ±â  channel=" + channelName);
-        _supportCallId = VideoCallSignalingMR.CurrentSupportCallId; // null °¡´É
+        Debug.Log("[RemoteSupport] ï¿½ï¿½È­ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ð³ï¿½ ï¿½Ñ±ï¿½  channel=" + channelName);
+        _supportCallId = VideoCallSignalingMR.CurrentSupportCallId; // null ï¿½ï¿½ï¿½ï¿½
         if (contextText) contextText.text = "";
         if (!string.IsNullOrEmpty(_supportCallId)) StartCoroutine(FetchContext());
         ResetForm();
@@ -106,13 +105,13 @@ public class RemoteSupportResultPanel : MonoBehaviour
         if (progressBar) progressBar.fillAmount = 0f;
         if (statusText) statusText.text = "";
         if (exampleText) exampleText.text = "";
-        if (recButtonLabel) recButtonLabel.text = "À½¼º ±â·Ï ½ÃÀÛ";
+        if (recButtonLabel) recButtonLabel.text = "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½";
         foreach (var g in resultButtonGraphics) if (g) g.color = normalColor;
         foreach (var m in selectedMarks) if (m) m.SetActive(false);
         StopMic(false);
     }
 
-    // ¦¡¦¡ ¹öÆ° OnClick: °á°ú ¼±ÅÃ (ÇØ°á¿Ï·á¡æ0, Ãë¼Ò¡æ1, ÀçÁö¿ø¿¹Á¤¡æ2, ±âÅ¸¡æ3). ¶óµð¿À: 1°³¸¸ À¯Áö ¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° OnClick: ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Ø°ï¿½Ï·ï¿½ï¿½0, ï¿½ï¿½Ò¡ï¿½1, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2, ï¿½ï¿½Å¸ï¿½ï¿½3). ï¿½ï¿½ï¿½ï¿½: 1ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     public void OnResultButton(int code)
     {
         _sel = Mathf.Clamp(code, 0, 3);
@@ -125,7 +124,7 @@ public class RemoteSupportResultPanel : MonoBehaviour
             if (selectedMarks[i]) selectedMarks[i].SetActive(i == _sel);
     }
 
-    // ¦¡¦¡ ¹öÆ° OnClick: À½¼º ±â·Ï ½ÃÀÛ/ÁßÁö Åä±Û ¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° OnClick: ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     public void ToggleRecording()
     {
         if (_rec) StopMic(true);
@@ -134,15 +133,15 @@ public class RemoteSupportResultPanel : MonoBehaviour
 
     void StartMic()
     {
-        if (Microphone.devices.Length == 0) { Status("¸¶ÀÌÅ© ¾øÀ½"); return; }
+        if (Microphone.devices.Length == 0) { Status("ï¿½ï¿½ï¿½ï¿½Å© ï¿½ï¿½ï¿½ï¿½"); return; }
         _clip = Microphone.Start(null, false, maxRecordSeconds, sampleRate);
         _rec = true;
-        if (recButtonLabel) recButtonLabel.text = "³ìÀ½ ÁßÁö";
-        Status("³ìÀ½ Áß¡¦");
+        if (recButtonLabel) recButtonLabel.text = "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½";
+        Status("ï¿½ï¿½ï¿½ï¿½ ï¿½ß¡ï¿½");
         _progCo = StartCoroutine(Progress());
     }
 
-    // ½Ç½Ã°£ ¸¶ÀÌÅ© À½·®(RMS) ¡æ progressBar.fillAmount (VU ¹ÌÅÍ). ½Ã°£ »óÇÑ µµ´Þ ½Ã ÀÚµ¿ Á¾·á.
+    // ï¿½Ç½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½Å© ï¿½ï¿½ï¿½ï¿½(RMS) ï¿½ï¿½ progressBar.fillAmount (VU ï¿½ï¿½ï¿½ï¿½). ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Úµï¿½ ï¿½ï¿½ï¿½ï¿½.
     IEnumerator Progress()
     {
         const int win = 256;
@@ -164,7 +163,7 @@ public class RemoteSupportResultPanel : MonoBehaviour
                 if (progressBar)
                     progressBar.fillAmount = Mathf.Lerp(progressBar.fillAmount, level, 0.35f);
             }
-            Status("³ìÀ½ Áß¡¦");
+            Status("ï¿½ï¿½ï¿½ï¿½ ï¿½ß¡ï¿½");
             yield return null;
         }
     }
@@ -177,14 +176,14 @@ public class RemoteSupportResultPanel : MonoBehaviour
         int pos = Microphone.GetPosition(null);
         Microphone.End(null);
         _rec = false;
-        if (recButtonLabel) recButtonLabel.text = "À½¼º ±â·Ï ½ÃÀÛ";
+        if (recButtonLabel) recButtonLabel.text = "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½";
         if (progressBar) progressBar.fillAmount = 0f;
 
         if (!toStt || _clip == null || pos <= 0) { Status(""); return; }
 
         var samples = new float[pos * _clip.channels];
         _clip.GetData(samples, 0);
-        Status("STT º¯È¯ Áß¡¦");
+        Status("STT ï¿½ï¿½È¯ ï¿½ß¡ï¿½");
         StartCoroutine(Stt(ToWav(samples, _clip.channels, sampleRate)));
     }
 
@@ -192,7 +191,7 @@ public class RemoteSupportResultPanel : MonoBehaviour
     {
         var form = new WWWForm();
         form.AddBinaryData("file", wav, "record.wav", "audio/wav");
-        using var req = UnityWebRequest.Post(serverBaseUrl.TrimEnd('/') + "/api/stt", form);
+        using var req = UnityWebRequest.Post(serverBaseUrl.TrimEnd('/') + "/api/ai/transcribe", form);
         yield return req.SendWebRequest();
 
         if (req.result == UnityWebRequest.Result.Success)
@@ -202,17 +201,17 @@ public class RemoteSupportResultPanel : MonoBehaviour
             if (r != null && r.success && !string.IsNullOrEmpty(r.text))
             {
                 if (exampleText) exampleText.text = r.text;
-                Status("¿Ï·á");
+                Status("ï¿½Ï·ï¿½");
             }
-            else Status("STT °á°ú ¾øÀ½");
+            else Status("STT ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
         }
-        else Status("STT ½ÇÆÐ: " + req.error);
+        else Status("STT ï¿½ï¿½ï¿½ï¿½: " + req.error);
     }
 
-    // ¦¡¦¡ ¹öÆ° OnClick: ÀúÀå ¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° OnClick: ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     public void OnSave()
     {
-        if (_sel < 0) { Status("°á°ú¸¦ ¼±ÅÃÇÏ¼¼¿ä"); return; }
+        if (_sel < 0) { Status("ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¼ï¿½ï¿½ï¿½"); return; }
         StartCoroutine(SaveCo());
     }
 
@@ -230,18 +229,18 @@ public class RemoteSupportResultPanel : MonoBehaviour
             req.downloadHandler = new DownloadHandlerBuffer();
             req.SetRequestHeader("Content-Type", "application/json");
             yield return req.SendWebRequest();
-            if (req.result != UnityWebRequest.Result.Success) { Status("ÀúÀå ½ÇÆÐ: " + req.error); yield break; }
+            if (req.result != UnityWebRequest.Result.Success) { Status("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: " + req.error); yield break; }
         }
-        else Debug.LogWarning("[RemoteSupport] support call id ¾øÀ½ - ¼­¹ö ÀúÀå °Ç³Ê¶Ü");
+        else Debug.LogWarning("[RemoteSupport] support call id ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ç³Ê¶ï¿½");
 
         if (itemContainer) itemContainer.SetActive(false);
         if (resultHistory) resultHistory.SetActive(true);
         if (historyResultText) historyResultText.text = LABELS[_sel];
-        if (historyNoteText) historyNoteText.text = string.IsNullOrEmpty(note) ? "¾øÀ½" : note;
-        Status("ÀúÀåµÊ");
+        if (historyNoteText) historyNoteText.text = string.IsNullOrEmpty(note) ? "ï¿½ï¿½ï¿½ï¿½" : note;
+        Status("ï¿½ï¿½ï¿½ï¿½ï¿½");
     }
 
-    // ¦¡¦¡ ¹öÆ° OnClick: ´Ý±â ¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° OnClick: ï¿½Ý±ï¿½ ï¿½ï¿½ï¿½ï¿½
     public void OnClose()
     {
         StopMic(false);
@@ -250,7 +249,7 @@ public class RemoteSupportResultPanel : MonoBehaviour
 
     void Status(string s) { if (statusText) statusText.text = s; }
 
-    // float[] ¡æ 16bit PCM WAV (AudioRecorder.cs¿Í µ¿ÀÏ ¹æ½Ä)
+    // float[] ï¿½ï¿½ 16bit PCM WAV (AudioRecorder.csï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½)
     static byte[] ToWav(float[] s, int ch, int rate)
     {
         using var ms = new MemoryStream();
@@ -276,10 +275,10 @@ public class RemoteSupportResultPanel : MonoBehaviour
         if (r == null || !r.success || r.data == null) yield break;
 
         _maintenanceLogId = r.data.maintenance_log_id;
-        string nm = string.IsNullOrEmpty(r.data.equipment_name) ? "¼³ºñ ¹ÌÁöÁ¤" : r.data.equipment_name;
+        string nm = string.IsNullOrEmpty(r.data.equipment_name) ? "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" : r.data.equipment_name;
         string ds = !string.IsNullOrEmpty(r.data.maintenance_description) ? r.data.maintenance_description
-                  : (!string.IsNullOrEmpty(r.data.work_type) ? r.data.work_type : "¿ø°Ý Áö¿ø");
-        if (contextText) contextText.text = nm + " ¡¤ " + ds;
+                  : (!string.IsNullOrEmpty(r.data.work_type) ? r.data.work_type : "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
+        if (contextText) contextText.text = nm + " ï¿½ï¿½ " + ds;
     }
 
     [Serializable] class CtxResp { public bool success; public CtxData data; }

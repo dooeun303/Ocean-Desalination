@@ -13,8 +13,7 @@ using Newtonsoft.Json;
 // VideoCallSignalingMR.RaiseCallAccepted()로 기존 MrCallDockPanel의 화상통화 흐름을 그대로 태운다.
 public class SupportCallList : MonoBehaviour
 {
-    [Header("서버 주소")]
-    public string serverUrl = "http://192.168.0.66:3000/api/support-calls";
+    public string serverUrl => ServerConfig.BaseUrl + "/api/support-calls";
 
     [Header("아이템 프리팹 & 컨테이너")]
     public GameObject itemPrefab;

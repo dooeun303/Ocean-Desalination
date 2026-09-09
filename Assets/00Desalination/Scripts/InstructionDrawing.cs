@@ -37,8 +37,7 @@ public class InstructionDrawing : MonoBehaviour,
     public Sprite checkSprite;           // 체크 스티커 스프라이트
     public GameObject stickerPrefab;        // 스티커 프리팹 (Image)
 
-    [Header("서버")]
-    public string serverUrl = "http://192.168.0.66:3000/api/files/instruction";
+    public string serverUrl => ServerConfig.BaseUrl + "/api/files/instruction";
 
     [Header("알림")]
     public GameObject alertPanel;       // 알림 패널

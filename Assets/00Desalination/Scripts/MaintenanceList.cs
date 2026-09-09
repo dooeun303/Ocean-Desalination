@@ -7,20 +7,19 @@ using UnityEngine.UI;
 
 public class MaintenanceList : MonoBehaviour
 {
-    [Header("¼­¹ö ÁÖ¼Ò")]
-    public string serverUrl = "http://192.168.0.66:3000/api/maintenance";
+    public string serverUrl => ServerConfig.BaseUrl + "/api/maintenances";
 
-    [Header("¾ÆÀÌÅÛ ÇÁ¸®ÆÕ & ÄÁÅ×ÀÌ³Ê")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ & ï¿½ï¿½ï¿½ï¿½ï¿½Ì³ï¿½")]
     public GameObject itemPrefab;
     public Transform itemContainer;
 
-    [Header("ÆË¾÷")]
+    [Header("ï¿½Ë¾ï¿½")]
     public MaintenancePopup popup;
 
-    [Header("Åë°è ÅØ½ºÆ®")]
-    public TMP_Text statsText;            // "ÃÑ N°Ç ¡¤ ÁøÇàÁß N°Ç ¡¤ ´ë±â N°Ç"
+    [Header("ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½Æ®")]
+    public TMP_Text statsText;            // "ï¿½ï¿½ Nï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Nï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ Nï¿½ï¿½"
 
-    [Header("ÆäÀÌÁö³×ÀÌ¼Ç")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½")]
     public Button prevButton;
     public Button nextButton;
     public TMP_Text pageText;
@@ -37,7 +36,7 @@ public class MaintenanceList : MonoBehaviour
 
     void OnEnable()
     {
-        Debug.Log("[Maintenance] OnEnable È£ÃâµÊ");
+        Debug.Log("[Maintenance] OnEnable È£ï¿½ï¿½ï¿½");
         StartCoroutine(FetchList());
     }
 
@@ -46,12 +45,12 @@ public class MaintenanceList : MonoBehaviour
         StartCoroutine(FetchList());
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ¸ñ·Ï ºÒ·¯¿À±â
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ï¿½ ï¿½Ò·ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     public IEnumerator FetchList()
     {
-        Debug.Log("[Maintenance] FetchList ½ÃÀÛ");
+        Debug.Log("[Maintenance] FetchList ï¿½ï¿½ï¿½ï¿½");
         List<MaintenanceData> result = new List<MaintenanceData>();
 
         string[] statuses = { "scheduled", "in_progress", "completed" };
@@ -59,7 +58,7 @@ public class MaintenanceList : MonoBehaviour
         foreach (string status in statuses)
         {
             string url = serverUrl + "?status=" + UnityWebRequest.EscapeURL(status);
-            Debug.Log("[Maintenance] ¿äÃ» URL: " + url);
+            Debug.Log("[Maintenance] ï¿½ï¿½Ã» URL: " + url);
 
             using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
@@ -67,7 +66,7 @@ public class MaintenanceList : MonoBehaviour
 
                 if (req.result != UnityWebRequest.Result.Success)
                 {
-                    Debug.LogError("[Maintenance] ¿äÃ» ½ÇÆÐ: " + req.error);
+                    Debug.LogError("[Maintenance] ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½: " + req.error);
                     continue;
                 }
 
@@ -79,8 +78,8 @@ public class MaintenanceList : MonoBehaviour
 
         _allItems = result;
 
-        // µ¥¸ð¿ë °íÁ¤ Ç×¸ñ - MR¿¡¼­ À¯Áöº¸¼ö ¸ñ·ÏÀ» ¿­¸é Ç×»ó ¸Ç À§¿¡ ÀÌ °Ç(ÆßÇÁ º£¾î¸µ ¸¶¸ð ÀÇ½É
-        // Á¡°Ë)ÀÌ º¸¿©¾ß ÇÑ´Ù´Â ¿äÃ» - ½ÇÁ¦ Á¤·Ä(scheduled_at DESC)°ú ¹«°üÇÏ°Ô ¾ÕÀ¸·Î ´ç°Ü¿Â´Ù.
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½×¸ï¿½ - MRï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½×»ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½î¸µ ï¿½ï¿½ï¿½ï¿½ ï¿½Ç½ï¿½
+        // ï¿½ï¿½ï¿½ï¿½)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ´Ù´ï¿½ ï¿½ï¿½Ã» - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(scheduled_at DESC)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ü¿Â´ï¿½.
         const string PinnedDemoItemId = "c7ddf74a-6bd1-444c-875d-f40fcc4ada6f";
         int pinnedIdx = _allItems.FindIndex(i => i.id == PinnedDemoItemId);
         if (pinnedIdx > 0)
@@ -94,9 +93,9 @@ public class MaintenanceList : MonoBehaviour
         RenderPage();
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ÆäÀÌÁö ·»´õ¸µ
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     private void RenderPage()
     {
         foreach (Transform child in itemContainer)
@@ -115,23 +114,23 @@ public class MaintenanceList : MonoBehaviour
                 itemUI.SetData(_allItems[i], OnItemClicked);
         }
 
-        // Åë°è
+        // ï¿½ï¿½ï¿½
         int inProgress = _allItems.FindAll(i => i.status == "in_progress").Count;
         int scheduled = _allItems.FindAll(i => i.status == "scheduled").Count;
         int completed = _allItems.FindAll(i => i.status == "completed").Count;
         if (statsText)
-            statsText.text = $"ÃÑ {total}°Ç ¡¤ ÁøÇàÁß {inProgress}°Ç ¡¤ ´ë±â {scheduled}°Ç ¡¤ ¿Ï·á {completed}°Ç";
+            statsText.text = $"ï¿½ï¿½ {total}ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ {inProgress}ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ {scheduled}ï¿½ï¿½ ï¿½ï¿½ ï¿½Ï·ï¿½ {completed}ï¿½ï¿½";
 
         if (pageText)
-            pageText.text = total == 0 ? "µ¥ÀÌÅÍ ¾øÀ½" : $"{_currentPage + 1} / {totalPages}";
+            pageText.text = total == 0 ? "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½" : $"{_currentPage + 1} / {totalPages}";
 
         if (prevButton) prevButton.interactable = _currentPage > 0;
         if (nextButton) nextButton.interactable = _currentPage < totalPages - 1;
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ÆäÀÌÁö ÀÌµ¿
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ìµï¿½
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     public void OnPrevPage()
     {
         if (_currentPage > 0) { _currentPage--; RenderPage(); }
@@ -161,8 +160,8 @@ public class MaintenanceData
     public string status;
     public string scheduled_at;
     public string completed_at;
-    public string technician_id;
-    public string technician_name;  // ¡ç Ãß°¡
+    public string ar_user_id;
+    public string ar_user_name;  // ï¿½ï¿½ ï¿½ß°ï¿½
     public MaintenanceEquipment equipment;
     public MaintenanceManual manual;
     public MaintenanceAlarm latest_alarm;

@@ -13,8 +13,7 @@ public class VideoCallSignalingMR : MonoBehaviour
 {
     public static VideoCallSignalingMR Instance;
 
-    [Header("서버 주소")]
-    public string serverUrl = "ws://192.168.0.66:3000?platform=MR";
+    public string serverUrl => ServerConfig.WsBaseUrl + "?platform=MR";
 
     // 통화 수락/거절/종료 이벤트 (channelName 전달)
     public static event Action<string> OnCallAccepted;
@@ -25,7 +24,7 @@ public class VideoCallSignalingMR : MonoBehaviour
     // 기존 OnCallAccepted 구독자가 똑같이 반응하도록, 이 통로로 같은 이벤트를 대신 발화해준다.
     // event는 선언한 클래스 밖에서 직접 Invoke할 수 없어서 이 public 메서드로 감싼다.
     // 2026-08-26: "도크 닫기 버튼 누르면 통화 종료" 요청 대응으로 callId도 같이 기억해둔다 -
-    // support_call.js REST(/end)를 호출하려면 channelName이 아니라 video_call 테이블의 id가 필요.
+    // support_call.js REST(/end)를 호출하려면 channelName이 아니라 remote_support 테이블의 id가 필요.
     public static string CurrentSupportCallId { get; private set; }
     public static void RaiseCallAccepted(string channelName, string callId = null)
     {

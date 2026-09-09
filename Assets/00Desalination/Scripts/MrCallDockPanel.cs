@@ -39,10 +39,10 @@ public class MrCallDockPanel : MonoBehaviour
     // 유닛)가 커서 얼굴 바로 앞을 가릴 만큼 크게 보였다("너무 가까워" 실기 확인). 버튼들은 크기가
     // 작아 그 거리에서도 괜찮았지만, 도크는 더 멀리 둬야 같은 체감 크기가 된다.
     const float DockDepth = 2.2f;
-    const string SupportCallUrl = "http://192.168.0.66:3000/api/support-calls/";
+    static readonly string SupportCallUrl = ServerConfig.BaseUrl + "/api/support-calls/";
     // InmoCallManager.cs(AR)/JoinChannelVideoToken.cs(MR 원본 로직)와 동일한 App ID/토큰 서버.
     const string AgoraAppID = "5b6baf59793d494f95554d1246847731";
-    const string AgoraTokenServerUrl = "http://192.168.0.66:3000";
+    static readonly string AgoraTokenServerUrl = ServerConfig.BaseUrl;
 
     GameObject canvasGo;
     RectTransform videoContainer;
@@ -161,7 +161,7 @@ public class MrCallDockPanel : MonoBehaviour
 
     IEnumerator FetchAgoraTokenAndJoin(string channel)
     {
-        string url = $"{AgoraTokenServerUrl}/rtc/{channel}/0";
+        string url = $"{AgoraTokenServerUrl}/api/rtc/{channel}/0";
         using var req = UnityWebRequest.Get(url);
         yield return req.SendWebRequest();
 
