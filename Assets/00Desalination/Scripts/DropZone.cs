@@ -1,6 +1,8 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using TMPro;
 
 // 화상통화 영상 영역에 붙는 스크립트
 // 아이콘이 드롭되면 WebSocket으로 AR에 전송
@@ -11,7 +13,11 @@ public class DropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
 
     [Header("색상")]
     public Color normalColor = new Color(1f, 1f, 1f, 0f);       // 기본 (투명)
-    public Color highlightColor = new Color(0.3f, 0.7f, 1f, 0.3f); // 드래그 올렸을 때
+    public Color highlightColor = new Color(0.3f, 0.7f, 1f, 0.09f); // 드래그 올렸을 때
+
+    [Header("완료 알림")]
+    public GameObject alertPanel;   // 공유 완료/실패 토스트 패널
+    public TMP_Text alertText;      // 토스트 텍스트
 
     void Start()
     {
@@ -76,9 +82,28 @@ public class DropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         });
 
         // 기존 WebSocket으로 전송
-        AlarmWebSocket.Instance.Send(message);
+        bool sent = AlarmWebSocket.Instance.Send(message);
 
         Debug.Log($"[DropZone] AR로 전송: {message}");
+
+        ShowAlert(sent ? "정보공유가 완료되었습니다." : "정보공유에 실패했습니다.");
+    }
+
+    // ─────────────────────────────────────────
+    // 완료/실패 토스트 (3초 후 자동 닫힘)
+    // ─────────────────────────────────────────
+    private void ShowAlert(string message)
+    {
+        if (alertText) alertText.text = message;
+        alertPanel?.SetActive(true);
+        StopAllCoroutines();
+        StartCoroutine(AutoHideAlert());
+    }
+
+    private IEnumerator AutoHideAlert()
+    {
+        yield return new WaitForSeconds(3f);
+        alertPanel?.SetActive(false);
     }
 }
 

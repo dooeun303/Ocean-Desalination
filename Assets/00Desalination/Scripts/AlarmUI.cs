@@ -21,11 +21,35 @@ public class AlarmUI : MonoBehaviour
     [Header("XR Rig")]
     public Transform xrRig; // ← 인스펙터에서 XR Origin (XR Rig) 연결
 
+    [Header("데모/테스트용 알람 (버튼 연결)")]
+    public string demoEquipmentId;                 // 테스트할 설비의 EquipmentMarker.equipmentId와 동일하게 설정
+    public string demoEquipmentName = "펌프 P-101";
+    public string demoDescription = "진동 및 온도 이상 패턴이 감지되어 고장 가능성이 높습니다.";
+    public string demoSeverity = "warning"; // critical / warning / info
+
     private string _currentEquipmentId; // 현 알람의 equipment_id
 
     // 알람 웹 소켓에서 알람을 받음이 확인되면 ShowAlarm()을 실행함
     void OnEnable() => AlarmWebSocket.OnAlarmReceived += ShowAlarm;
     void OnDisable() => AlarmWebSocket.OnAlarmReceived -= ShowAlarm;
+
+    // 버튼에서 직접 호출하는 테스트/데모용 알람 트리거 (서버 웹소켓 없이 발생)
+    public void TriggerDemoAlarm()
+    {
+        var demoAlarm = new AlarmData
+        {
+            type = "ALARM",
+            alarm_id = "demo",
+            alarm_code = "demo",
+            severity = demoSeverity,
+            description = demoDescription,
+            triggered_at = DateTime.Now.ToString("o"),
+            equipment = new EquipmentData { id = demoEquipmentId, name = demoEquipmentName },
+            mr_space_id = ""
+        };
+
+        ShowAlarm(demoAlarm);
+    }
 
     /// <summary>
     /// 알람보기
@@ -36,7 +60,13 @@ public class AlarmUI : MonoBehaviour
         // equipment_id 저장 (텔포용)
         _currentEquipmentId = alarm.equipment?.id;
         // 텍스트 세팅
-        string formattedTime = DateTime.Parse(alarm.triggered_at).ToString("yyyy-MM-dd HH:mm:ss");
+        // 서버(Postgres)에서 오는 triggered_at 포맷이 .NET DateTime.Parse가 못 읽는 형태로 올 때가
+        // 있어(FormatException 실기 확인) - 네트워크로 들어오는 외부 값이라 파싱 실패를 가정하고
+        // 방어적으로 처리한다. 실패하면 원본 문자열을 그대로 보여줘서 최소한 알람 자체는 안 놓치게 함.
+        string formattedTime = DateTime.TryParse(alarm.triggered_at, null,
+            System.Globalization.DateTimeStyles.RoundtripKind, out var parsedTime)
+            ? parsedTime.ToString("yyyy-MM-dd HH:mm:ss")
+            : alarm.triggered_at;
         timeText.text = formattedTime;
         titleText.text = $"{alarm.equipment?.name}의 고장예지 확률이 임계값을 초과하였습니다.";
         descText.text = alarm.description;
@@ -79,6 +109,12 @@ public class AlarmUI : MonoBehaviour
                         xrRig.position = marker.teleportPoint.position;
                         xrRig.rotation = marker.teleportPoint.rotation;
                     }));
+                    // "고장예지 알람 설비로 이동할 때 뭔가 효과(테두리 등)가 있었으면 좋겠다" 요청 -
+                    // 도착한 설비를 잠깐 밝은 색으로 펄스 하이라이트해서 어떤 설비인지 바로 알아보게 한다.
+                    // 지원요청 수락 텔레포트(SupportCallList.cs)에서도 재사용하도록 EquipmentMarker에 있다.
+                    // marker(설비) 자신에게 코루틴을 걸어야 한다 - 이 컴포넌트가 나중에 비활성화돼도
+                    // 설비 자신은 안 꺼지니 안전하다(SupportCallList.cs와 동일한 이유).
+                    marker.StartCoroutine(marker.Highlight());
                 }
                 else
                     Debug.LogWarning("[AlarmUI] 텔레포트 포인트 없음: " + marker.name);

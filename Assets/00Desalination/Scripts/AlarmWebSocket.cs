@@ -31,7 +31,7 @@ public class AlarmWebSocket : MonoBehaviour
     void Start()
     {
         // 웹소켓 서버에 연결 (플랫폼은 MR로)
-        ws = new WebSocketSharp.WebSocket("ws://192.168.0.66:3000?platform=MR");
+        ws = new WebSocketSharp.WebSocket(ServerConfig.WsBaseUrl + "?platform=MR");
 
         // 연결 이벤트
         ws.OnOpen += (s, e) => Debug.Log("[WS] 연결 성공");
@@ -74,17 +74,17 @@ public class AlarmWebSocket : MonoBehaviour
         }
     }
 
-    public void Send(string message)
+    public bool Send(string message)
     {
         if (ws != null && ws.ReadyState == WebSocketState.Open)
         {
             ws.Send(message);
             Debug.Log("[WS] 전송: " + message);
+            return true;
         }
-        else
-        {
-            Debug.LogWarning("[WS] 전송 실패 — 연결 안 됨");
-        }
+
+        Debug.LogWarning("[WS] 전송 실패 — 연결 안 됨");
+        return false;
     }
 
     void OnDestroy()

@@ -99,7 +99,7 @@ public class InspectionPopup : MonoBehaviour
         videoCallButton?.onClick.AddListener(OnVideoCallButton); // 화상통화
         closeButton?.onClick.AddListener(Close); // 닫기
 
-        moveConfirmYesButton?.onClick.AddListener(OnMoveConfirmYes); // 설비 이동 yes 
+        moveConfirmYesButton?.onClick.AddListener(OnMoveConfirmYes); // 설비 이동 yes
         moveConfirmNoButton?.onClick.AddListener(OnMoveConfirmNo); // 설비 이동 no
 
         confirmYesButton?.onClick.AddListener(OnConfirmYes); // 저장 yes
@@ -109,6 +109,14 @@ public class InspectionPopup : MonoBehaviour
         popupPanel?.SetActive(false);
         confirmPanel?.SetActive(false);
         moveConfirmPanel?.SetActive(false);
+
+        // 화상통화 거절 이벤트 구독 (수락되면 JoinChannelVideoToken이 알아서 join함)
+        VideoCallSignalingMR.OnCallRejected += OnVideoCallRejected;
+    }
+
+    void OnDestroy()
+    {
+        VideoCallSignalingMR.OnCallRejected -= OnVideoCallRejected;
     }
 
     // 1. 팝업 열기
@@ -324,10 +332,22 @@ public class InspectionPopup : MonoBehaviour
     }
 
     // 14. 화상통화 버튼
+    // videoCallPanel은 켜두되(엔진 준비용), 실제 채널 join은 AR이 수락한 뒤에 일어남
     public void OnVideoCallButton()
     {
-        Debug.Log("[InspectionPopup] 화상통화 시작 → equipment_id: " + _currentItem.equipment_id);
+        Debug.Log("[InspectionPopup] 화상통화 요청 → equipment_id: " + _currentItem.equipment_id);
         videoCallPanel?.SetActive(true);
+        VideoCallSignalingMR.Instance?.RequestCall(_currentItem.equipment_id);
+    }
+
+    // 화상통화 거절됨 → 대기 중이던 패널 닫기
+    private void OnVideoCallRejected(string channelName)
+    {
+        if (_currentItem != null && channelName == _currentItem.equipment_id)
+        {
+            Debug.Log("[InspectionPopup] 화상통화 거절됨: " + channelName);
+            videoCallPanel?.SetActive(false);
+        }
     }
 
     // 15. 완료 결과 표시

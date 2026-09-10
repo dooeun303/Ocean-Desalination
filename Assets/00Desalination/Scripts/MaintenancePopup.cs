@@ -32,7 +32,6 @@ public class MaintenancePopup : MonoBehaviour
 
     [Header("결과 선택 드롭다운")]
     public TMP_Dropdown categoryDropdown;    // 대분류 드롭다운
-    public TMP_Dropdown subcategoryDropdown; // 소분류 드롭다운
 
     // 버튼
     [Header("버튼 - 시작 전")]
@@ -54,8 +53,7 @@ public class MaintenancePopup : MonoBehaviour
     public Button saveConfirmNoButton;    // 아니오
 
     // 서버 / XR
-    [Header("서버 주소")]
-    public string serverUrl = "http://192.168.0.66:3000/api/maintenance/";
+    public string serverUrl => ServerConfig.BaseUrl + "/api/maintenances/";
 
     [Header("XR Rig")]
     public Transform xrRig;
@@ -64,14 +62,15 @@ public class MaintenancePopup : MonoBehaviour
     public GameObject menuPanelToHide;           // 메뉴 패널
     public GameObject maintenanceListPanelToHide; // 유지보수 리스트 패널
 
+    [Header("화상통화")]
+    public GameObject videoCallPanel;            // 화상통화 패널 (JoinChannelVideoToken 붙어있는 오브젝트)
+
     private MaintenanceData _data;
     private List<ResultCategory> _categories = new List<ResultCategory>();
-    private string _selectedCategoryId = null;
 
     void Start()
     {
         closeButton?.onClick.AddListener(OnCloseButton);
-        categoryDropdown?.onValueChanged.AddListener(OnCategoryChanged);
         startButton?.onClick.AddListener(OnStartButton);
         completeButton?.onClick.AddListener(OnCompleteButton);
 
@@ -85,6 +84,14 @@ public class MaintenancePopup : MonoBehaviour
         moveConfirmPanel?.SetActive(false);
         saveConfirmPanel?.SetActive(false);
         resultAlertPanel?.SetActive(false);
+
+        // 화상통화 거절 이벤트 구독
+        VideoCallSignalingMR.OnCallRejected += OnVideoCallRejected;
+    }
+
+    void OnDestroy()
+    {
+        VideoCallSignalingMR.OnCallRejected -= OnVideoCallRejected;
     }
 
     // 팝업 열기
@@ -146,14 +153,12 @@ public class MaintenancePopup : MonoBehaviour
             if (resultText) resultText.text = string.IsNullOrEmpty(_data.result) ? "-" : _data.result;
             if (aiSummaryText) aiSummaryText.text = string.IsNullOrEmpty(_data.ai_summary) ? "AI 요약 없음" : _data.ai_summary;
             categoryDropdown?.gameObject.SetActive(false);
-            subcategoryDropdown?.gameObject.SetActive(false);
         }
         else
         {
             // 미완료 — 드롭다운 표시, 결과 섹션 숨기기
             resultSection?.SetActive(false);
             categoryDropdown?.gameObject.SetActive(true);
-            subcategoryDropdown?.gameObject.SetActive(true);
             ResetDropdowns();
             LoadCategories();
         }
@@ -268,11 +273,23 @@ public class MaintenancePopup : MonoBehaviour
     }
 
     // 화상통화 버튼
+    // videoCallPanel은 켜두되(엔진 준비용), 실제 채널 join은 AR이 수락한 뒤에 일어남
     public void OnVideoCallButton()
     {
-        Debug.Log("[Maintenance] 화상통화 시작 → maintenance_id: " + _data.id);
+        Debug.Log("[Maintenance] 화상통화 요청 → maintenance_id: " + _data.id);
         AudioRecorder.Instance?.StartRecording();
-        // TODO: 화상통화 스크립트 호출
+        videoCallPanel?.SetActive(true);
+        VideoCallSignalingMR.Instance?.RequestCall(_data.id);
+    }
+
+    // 화상통화 거절됨 → 대기 중이던 패널 닫기
+    private void OnVideoCallRejected(string channelName)
+    {
+        if (_data != null && channelName == _data.id)
+        {
+            Debug.Log("[Maintenance] 화상통화 거절됨: " + channelName);
+            videoCallPanel?.SetActive(false);
+        }
     }
 
     // 상태 업데이트
@@ -313,13 +330,6 @@ public class MaintenancePopup : MonoBehaviour
             categoryDropdown.ClearOptions();
             categoryDropdown.options.Add(new TMP_Dropdown.OptionData("대분류 선택"));
         }
-        if (subcategoryDropdown)
-        {
-            subcategoryDropdown.ClearOptions();
-            subcategoryDropdown.options.Add(new TMP_Dropdown.OptionData("소분류 선택"));
-            subcategoryDropdown.interactable = false;
-        }
-        _selectedCategoryId = null;
     }
 
     // 대분류 목록 로드
@@ -330,7 +340,8 @@ public class MaintenancePopup : MonoBehaviour
 
     private IEnumerator FetchCategories()
     {
-        string url = serverUrl + "result-categories";
+        // 정비 결과 대분류 = system_code RESP10 (유지관리결과 구분)
+        string url = ServerConfig.BaseUrl + "/api/codes?group=RESP10";
         using var req = UnityWebRequest.Get(url);
         yield return req.SendWebRequest();
 
@@ -355,72 +366,15 @@ public class MaintenancePopup : MonoBehaviour
         }
     }
 
-    // 대분류 선택 시 소분류 로드
-    private void OnCategoryChanged(int index)
-    {
-        if (index == 0)
-        {
-            subcategoryDropdown.ClearOptions();
-            subcategoryDropdown.options.Add(new TMP_Dropdown.OptionData("소분류 선택"));
-            subcategoryDropdown.interactable = false;
-            subcategoryDropdown.RefreshShownValue();
-            _selectedCategoryId = null;
-            return;
-        }
-
-        if (_categories == null || index - 1 < 0 || index - 1 >= _categories.Count)
-        {
-            Debug.LogWarning("[Maintenance] Selected category is out of bounds or list is empty.");
-            subcategoryDropdown?.ClearOptions();
-            subcategoryDropdown?.options.Add(new TMP_Dropdown.OptionData("소분류 선택"));
-            if (subcategoryDropdown) subcategoryDropdown.interactable = false;
-            return;
-        }
-
-        var selected = _categories[index - 1]; // index 0은 "대분류 선택"이라서 -1
-        _selectedCategoryId = selected.id;
-        StartCoroutine(FetchSubcategories(selected.id));
-    }
-
-    private IEnumerator FetchSubcategories(string categoryId)
-    {
-        string url = serverUrl + "result-categories/" + categoryId + "/subcategories";
-        using var req = UnityWebRequest.Get(url);
-        yield return req.SendWebRequest();
-
-        if (req.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError("[Maintenance] 소분류 로드 실패: " + req.error);
-            yield break;
-        }
-
-        var response = JsonUtility.FromJson<ResultCategoryResponse>(req.downloadHandler.text);
-        if (!response.success || response.data == null) yield break;
-
-        if (subcategoryDropdown)
-        {
-            subcategoryDropdown.ClearOptions();
-            subcategoryDropdown.options.Add(new TMP_Dropdown.OptionData("소분류 선택"));
-            foreach (var sub in response.data)
-                subcategoryDropdown.options.Add(new TMP_Dropdown.OptionData(sub.name));
-            subcategoryDropdown.interactable = true;
-            subcategoryDropdown.RefreshShownValue();
-        }
-    }
-
-    // 선택된 결과 텍스트 반환
+    // 선택된 결과 텍스트 반환 (대분류만)
     private string GetSelectedResult()
     {
-        if (categoryDropdown == null || subcategoryDropdown == null) return "작업 완료";
+        if (categoryDropdown == null) return "작업 완료";
 
         int catIndex = categoryDropdown.value;
-        int subIndex = subcategoryDropdown.value;
+        if (catIndex == 0) return "작업 완료";
 
-        if (catIndex == 0 || subIndex == 0) return "작업 완료";
-
-        string category = categoryDropdown.options[catIndex].text;
-        string subcategory = subcategoryDropdown.options[subIndex].text;
-        return $"{category} - {subcategory}";
+        return categoryDropdown.options[catIndex].text;
     }
 
     // 저장 결과 알림 (3초 후 자동 닫힘)

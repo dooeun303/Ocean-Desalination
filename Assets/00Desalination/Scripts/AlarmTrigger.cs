@@ -5,8 +5,8 @@ using TMPro;
 using UnityEngine.Networking;
 
 /// <summary>
-/// ¾Ë¶÷¹ß»ý±âÀÇ ¹öÆ°À» ÀÛµ¿½ÃÅ°´Â ½ºÅ©¸³Æ®
-/// ³ëµå ¼­¹ö¿¡ api/alarm/trigger/start or stop À» post ¿äÃ»ÇÏ¿© 
+/// ï¿½Ë¶ï¿½ï¿½ß»ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ°ï¿½ï¿½ ï¿½Ûµï¿½ï¿½ï¿½Å°ï¿½ï¿½ ï¿½ï¿½Å©ï¿½ï¿½Æ®
+/// ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ api/alarm/trigger/start or stop ï¿½ï¿½ post ï¿½ï¿½Ã»ï¿½Ï¿ï¿½ 
 /// </summary>
 public class AlarmTrigger : MonoBehaviour
 {
@@ -15,36 +15,44 @@ public class AlarmTrigger : MonoBehaviour
 
     public void OnPressedStart()
     {
-        StartCoroutine(SendRequest("http://192.168.0.66:3000/api/alarm/trigger/start"));
-        Debug.Log("[Trigger] ¾Ë¶÷ ¹ß»ý ½ÃÀÛ ¹öÆ° ´©¸§");
-        logText.text = "[Trigger] ¾Ë¶÷ ¹ß»ý ½ÃÀÛ ¹öÆ° ´©¸§";
+        StartCoroutine(SendRequest(ServerConfig.BaseUrl + "/api/alarms", "POST"));
+        Debug.Log("[Trigger] ï¿½Ë¶ï¿½ ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½");
+        logText.text = "[Trigger] ï¿½Ë¶ï¿½ ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½";
     }
 
     public void OnPressedStop()
     {
-        StartCoroutine(SendRequest("http://192.168.0.66:3000/api/alarm/trigger/stop"));
+        StartCoroutine(SendRequest(ServerConfig.BaseUrl + "/api/alarms/active", "DELETE"));
 
-        Debug.Log("[Trigger] ¾Ë¶÷ ¹ß»ý ÁßÁö ¹öÆ° ´©¸§");
-        logText.text = "[Trigger] ¾Ë¶÷ ¹ß»ý ÁßÁö ¹öÆ° ´©¸§";
+        Debug.Log("[Trigger] ï¿½Ë¶ï¿½ ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½");
+        logText.text = "[Trigger] ï¿½Ë¶ï¿½ ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ° ï¿½ï¿½ï¿½ï¿½";
 
     }
 
-    private IEnumerator SendRequest(string url)
+    private IEnumerator SendRequest(string url, string method = "POST")
     {
-
-        UnityWebRequest req = UnityWebRequest.PostWwwForm(url, "");
+        UnityWebRequest req;
+        if (method == "DELETE")
+        {
+            req = UnityWebRequest.Delete(url);
+            req.downloadHandler = new DownloadHandlerBuffer();
+        }
+        else
+        {
+            req = UnityWebRequest.PostWwwForm(url, "");
+        }
         yield return req.SendWebRequest();
 
         if (req.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("[Trigger] ¿äÃ» ¼º°ø: " + req.downloadHandler.text);
-            logText.text = $"[Trigger] ¿äÃ» ¼º°ø: {req.downloadHandler.text}";
+            Debug.Log("[Trigger] ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½: " + req.downloadHandler.text);
+            logText.text = $"[Trigger] ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½: {req.downloadHandler.text}";
 
         }
         else
         {
-            Debug.Log("[Trigger] ¿äÃ» ½ÇÆÐ: " + req.error);
-            logText.text = $"[Trigger] ¿äÃ» ½ÇÆÐ: {req.error}";
+            Debug.Log("[Trigger] ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½: " + req.error);
+            logText.text = $"[Trigger] ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½: {req.error}";
         }
     }
 }
