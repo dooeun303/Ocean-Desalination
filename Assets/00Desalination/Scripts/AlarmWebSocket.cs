@@ -31,7 +31,7 @@ public class AlarmWebSocket : MonoBehaviour
     void Start()
     {
         // 웹소켓 서버에 연결 (플랫폼은 MR로)
-        ws = new WebSocketSharp.WebSocket("ws://192.168.0.66:3000?platform=MR");
+        ws = new WebSocketSharp.WebSocket(ServerConfig.WsBaseUrl + "?platform=MR");
 
         // 연결 이벤트
         ws.OnOpen += (s, e) => Debug.Log("[WS] 연결 성공");

@@ -20,8 +20,7 @@ public class EquipmentApiService : MonoBehaviour
 
     public static EquipmentApiService Instance { get; private set; }
 
-    [Header("서버설정")]
-    [SerializeField] private string baseUrl = "http://localhost:3000";
+    private string baseUrl => ServerConfig.BaseUrl;
     [SerializeField] private float timeoutSeconds = 10f;
 
     private void Awake()

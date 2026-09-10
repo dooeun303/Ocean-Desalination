@@ -363,8 +363,7 @@ namespace Agora_RTC_Plugin.API_Example.Examples.Advanced.JoinChannelVideoToken
         [SerializeField] private string _token = ""; // 토큰 (더 이상 수동 입력 안 해도 됨 — 자동발급으로 대체)
         [SerializeField] private string _channelName = ""; // 채널명
 
-        [Header("토큰 자동발급 서버")]
-        [SerializeField] private string _tokenServerUrl = "http://192.168.0.66:3000"; // TempServer 주소
+        private string _tokenServerUrl => ServerConfig.BaseUrl;
 
         [Header("DEBUG UI")]
         [SerializeField] private RawImage DebugWebCamPreview; // WebCamTexture 직접 확인

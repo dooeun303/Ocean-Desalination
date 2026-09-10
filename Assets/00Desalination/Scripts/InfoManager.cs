@@ -7,8 +7,7 @@ using UnityEngine.Networking;
 // 서버에서 파일 목록 받아서 아이템 생성
 public class InfoShareManager : MonoBehaviour
 {
-    [Header("서버 주소")]
-    public string serverUrl = "http://192.168.0.66:3000/api/files";
+    public string serverUrl => ServerConfig.BaseUrl + "/api/files";
 
     [Header("UI 연결")]
     public Transform itemContainer;   // 아이템 컨테이너
