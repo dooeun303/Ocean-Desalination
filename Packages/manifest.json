@@ -2,7 +2,8 @@
   "dependencies": {
     "com.coffee.ui-effect": "https://github.com/mob-sakai/UIEffect.git?path=Packages/src",
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
-    "com.meta.xr.sdk.all": "71.0.0",
+    "com.meta.xr.sdk.all": "85.0.0",
+    "com.meta.xr.sdk.core": "74.0.0",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.assistant": "2.12.0-pre.2",
     "com.unity.ai.navigation": "2.0.12",

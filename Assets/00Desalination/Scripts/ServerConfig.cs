@@ -14,7 +14,7 @@ public static class ServerConfig
     }
 
     // ▼▼▼ 여기 한 줄만 바꾸면 됩니다 ▼▼▼
-    public static readonly Target Current = Target.Local;
+    public static readonly Target Current = Target.Company;
     // ▲▲▲ 여기 한 줄만 바꾸면 됩니다 ▲▲▲
 
     public const int Port = 3000;

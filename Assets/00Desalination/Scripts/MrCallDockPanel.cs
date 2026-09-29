@@ -80,8 +80,12 @@ public class MrCallDockPanel : MonoBehaviour
     // 포즈를 남기면(MrArrivalState.HasDockPose), 카메라 앞 HUD 대신 그 자리에 월드 고정으로 띄운다.
     bool worldAnchored;
 
+    // 통화 수락~종료 동안 AR 원격 영상 / MR 시점 화면을 mp4로 녹화 → 종료 시 서버 업로드.
+    MrCallRecorder recorder;
+
     void Awake()
     {
+        recorder = gameObject.AddComponent<MrCallRecorder>();
         BuildUI();
         SelectTab(Tab.Guide);
         // 2026-08-24: "Play 누르자마자 도크가 뜨는데 통화 요청은 언제 나가는거냐" 피드백 - 이
@@ -195,6 +199,21 @@ public class MrCallDockPanel : MonoBehaviour
         _rtcEngine.JoinChannel(tokenResponse.token, channel, 0, options);
         _agoraInCall = true;
         Debug.Log("[MrCallDockPanel][Agora] 채널 join: " + channel);
+        // 녹화 세션 시작 - 실제 MR 화면 녹화는 전용 채널 토큰을 받은 뒤 StartViewCapture에서.
+        recorder.Begin(_rtcEngine, channel, VideoCallSignalingMR.CurrentSupportCallId);
+
+        // MR 시점 화면 녹화용 전용 채널({채널}_mrrec) 토큰 - 받지 못하면 녹화만 건너뛰고 통화는 그대로.
+        string recToken = null;
+        using (var recReq = UnityWebRequest.Get($"{AgoraTokenServerUrl}/api/rtc/{channel}_mrrec/0"))
+        {
+            yield return recReq.SendWebRequest();
+            if (recReq.result == UnityWebRequest.Result.Success)
+                recToken = JsonUtility.FromJson<AgoraTokenResponse>(recReq.downloadHandler.text)?.token;
+            else
+                Debug.LogWarning("[MrCallDockPanel][Agora] 녹화 채널 토큰 발급 실패: " + recReq.error);
+        }
+        if (channel != channelName || !_agoraInCall || recToken == null) yield break;
+        recorder.StartViewCapture(recToken);
     }
 
     void EnsureAgoraEngine()
@@ -211,11 +230,13 @@ public class MrCallDockPanel : MonoBehaviour
         };
         _rtcEngine.Initialize(context);
         _rtcEngine.InitEventHandler(new DockAgoraEventHandler(this));
+        MrCallRecorder.ConfigureEngine(_rtcEngine); // MR 화면 녹화용 외부 비디오 소스 (join 전에 켜야 함)
     }
 
     void LeaveAgoraChannel()
     {
         if (!_agoraInCall) return;
+        recorder.End(); // 녹화 마무리 + 전용 채널 나가기 → 업로드
         _rtcEngine?.LeaveChannel();
 
         // 내가 먼저 나갈 땐 OnUserOffline이 안 와서 이전 영상 뷰가 남아있을 수 있다(재연결 시
@@ -232,6 +253,7 @@ public class MrCallDockPanel : MonoBehaviour
     {
         if (_rtcEngine != null)
         {
+            recorder.Abort();
             _rtcEngine.LeaveChannel();
             _rtcEngine.Dispose();
         }
@@ -248,14 +270,22 @@ public class MrCallDockPanel : MonoBehaviour
         readonly MrCallDockPanel _owner;
         internal DockAgoraEventHandler(MrCallDockPanel owner) { _owner = owner; }
 
+        public override void OnJoinChannelSuccess(RtcConnection connection, int elapsed)
+        {
+            _owner.recorder.OnJoinChannelSuccess(connection);
+        }
+
         public override void OnUserJoined(RtcConnection connection, uint uid, int elapsed)
         {
+            // 녹화 전용 채널({채널}_mrrec) 이벤트는 도크 영상과 무관
+            if (connection.channelId != _owner.channelName) return;
             JoinChannelVideoToken.MakeVideoView(uid, connection.channelId, _owner.videoContainer);
             if (_owner.connectingSpinner != null) _owner.connectingSpinner.SetActive(false);
         }
 
         public override void OnUserOffline(RtcConnection connection, uint uid, USER_OFFLINE_REASON_TYPE reason)
         {
+            if (connection.channelId != _owner.channelName) return;
             JoinChannelVideoToken.DestroyVideoView(uid);
             if (_owner.connectingSpinner != null) _owner.connectingSpinner.SetActive(true);
         }
