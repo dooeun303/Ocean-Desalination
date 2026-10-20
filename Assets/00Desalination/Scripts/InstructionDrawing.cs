@@ -353,15 +353,38 @@ public class InstructionDrawing : MonoBehaviour,
 
     private void ShowAlert(string message)
     {
+        ResolveAlert();
         if (alertText) alertText.text = message;
-        alertPanel?.SetActive(true);
+        if (alertPanel) alertPanel.SetActive(true);
         StartCoroutine(AutoHideAlert());
     }
 
     private IEnumerator AutoHideAlert()
     {
         yield return new WaitForSeconds(3f);
-        alertPanel?.SetActive(false);
+        if (alertPanel) alertPanel.SetActive(false);
+    }
+
+    // 2026-10-20: 이 패널을 다른 씬(MR → MR 2)에서 복사해 오면 씬 밖을 가리키던 alertPanel/alertText가
+    // 비어서 전송 후 UnassignedReferenceException이 났다(`?.`는 Unity의 "빈 참조"를 못 걸러낸다).
+    // 비어 있으면 씬에서 같은 이름의 알림 패널(꺼져 있어도)을 찾아 쓰고, 없으면 알림만 건너뛴다.
+    const string AlertPanelName = "화상통화_지시하기_전송 결과";
+
+    private void ResolveAlert()
+    {
+        if (!alertPanel)
+        {
+            foreach (var go in Resources.FindObjectsOfTypeAll<GameObject>())
+            {
+                if (go.name == AlertPanelName && go.scene.IsValid())
+                {
+                    alertPanel = go;
+                    break;
+                }
+            }
+            if (!alertPanel) Debug.LogWarning("[InstructionDrawing] 알림 패널(" + AlertPanelName + ")을 못 찾음 - 전송 결과 알림 생략");
+        }
+        if (!alertText && alertPanel) alertText = alertPanel.GetComponentInChildren<TMP_Text>(true);
     }
 
     // ─────────────────────────────────────────

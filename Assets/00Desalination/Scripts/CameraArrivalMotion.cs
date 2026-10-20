@@ -13,9 +13,9 @@ using UnityEngine;
 public class CameraArrivalMotion : MonoBehaviour
 {
     [SerializeField] float duration = 3.8f;
-    [SerializeField] float pullBack = 0.9f;      // 시작 시 로컬 뒤(-forward)로
-    [SerializeField] float riseUp = 0.3f;        // 시작 시 로컬 위(+up)로
-    [SerializeField] float startLookDownDeg = 6f; // 시작 시 추가로 더 내려다봄(모션 중에만, 끝나면 사라짐)
+    [SerializeField] float pullBack = 0.9f;      // 시작 시 시선의 뒤쪽으로
+    [SerializeField] float riseUp = 0.3f;        // 시작 시 위(+up)로
+    // (startLookDownDeg 제거 - Camera Offset을 숙이면 고개 돌린 상태에서 사선/기울기로 보였다)
     // ⚠ 0 이 아니면 Camera Offset 에 상시 pitch 가 남아 헤드트래킹과 합성될 때 멀미를 유발한다.
     //   "끝나면 설비를 내려다보는 느낌"은 텔레포트 회전(targetPoint)을 설비 쪽으로 살짝 숙여 잡는 게 안전.
     [SerializeField] float endLookDownDeg = 0f;   // 모션 종료 후 유지할 아래 각도(권장 0)
@@ -40,10 +40,12 @@ public class CameraArrivalMotion : MonoBehaviour
 
     IEnumerator Settle()
     {
-        // 끝: 살짝 아래를 보는 자세로 마무리. 시작: 거기서 더 내려다보며 뒤/위로 물러난 자세.
+        // 2026-10-20: "회전하니까 사선으로 움직여" - 예전엔 XR Rig의 앞뒤로 당기고 Camera Offset을 숙였는데,
+        // 헤드셋 사용자가 고개를 조금만 돌려도 그 축이 시선과 어긋나 비스듬히 미끄러지고 기울어 보였다.
+        // 이제 회전은 하지 않고, 지금 실제 시선(수평)의 정반대 방향으로 물러났다가 똑바로 다가온다.
         Quaternion endRot = _restRot * Quaternion.Euler(endLookDownDeg, 0f, 0f);
-        Quaternion startRot = endRot * Quaternion.Euler(startLookDownDeg, 0f, 0f);
-        Vector3 startPos = _restPos + new Vector3(0f, riseUp, -pullBack);
+        Vector3 startPos = _restPos + LocalBackAndUp();
+        transform.localRotation = endRot;
 
         float t = 0f;
         while (t < duration)
@@ -52,11 +54,19 @@ public class CameraArrivalMotion : MonoBehaviour
             float k = Mathf.Clamp01(t / duration);
             k = 1f - Mathf.Pow(1f - k, 3f); // ease-out cubic
             transform.localPosition = Vector3.LerpUnclamped(startPos, _restPos, k);
-            transform.localRotation = Quaternion.SlerpUnclamped(startRot, endRot, k);
             yield return null;
         }
         transform.localPosition = _restPos;
-        transform.localRotation = endRot;
         _co = null;
+    }
+
+    // 시선의 수평 뒤쪽 pullBack + 월드 위쪽 riseUp 을 이 오브젝트 부모의 로컬 좌표로.
+    Vector3 LocalBackAndUp()
+    {
+        var cam = Camera.main;
+        Vector3 fwd = cam != null ? Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up) : Vector3.zero;
+        if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+        Vector3 worldOffset = -fwd.normalized * pullBack + Vector3.up * riseUp;
+        return transform.parent != null ? transform.parent.InverseTransformVector(worldOffset) : worldOffset;
     }
 }

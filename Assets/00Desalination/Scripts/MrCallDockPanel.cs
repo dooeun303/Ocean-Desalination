@@ -81,11 +81,14 @@ public class MrCallDockPanel : MonoBehaviour
     bool worldAnchored;
 
     // 통화 수락~종료 동안 AR 원격 영상 / MR 시점 화면을 mp4로 녹화 → 종료 시 서버 업로드.
+    // 2026-10-20: 시연 영상 촬영 중 기기 화면 녹화로 대신하기로 해서 일단 끔. true로 바꾸면 그대로 다시 동작.
+    // 꺼져 있으면 recorder가 null - 녹화 전용 채널/토큰/외부 비디오 소스도 안 쓴다.
+    const bool EnableCallRecording = false;
     MrCallRecorder recorder;
 
     void Awake()
     {
-        recorder = gameObject.AddComponent<MrCallRecorder>();
+        if (EnableCallRecording) recorder = gameObject.AddComponent<MrCallRecorder>();
         BuildUI();
         SelectTab(Tab.Guide);
         // 2026-08-24: "Play 누르자마자 도크가 뜨는데 통화 요청은 언제 나가는거냐" 피드백 - 이
@@ -118,7 +121,8 @@ public class MrCallDockPanel : MonoBehaviour
         canvasGo.SetActive(true);
 
         // 유지보수 도착 연출이 도크 위치를 지정했으면(정보 패널 옆) 카메라 HUD 대신 거기에 월드 고정.
-        worldAnchored = MrArrivalState.HasDockPose;
+        // 단, 그 자리가 지금 시선에서 벗어나 있으면(옆/뒤/멀리) 도착 직후 도크가 안 보이므로 HUD로 띄운다.
+        worldAnchored = MrArrivalState.HasDockPose && IsInFrontOfViewer(MrArrivalState.DockPos);
         if (worldAnchored)
         {
             canvasGo.transform.SetParent(null, true);
@@ -128,6 +132,20 @@ public class MrCallDockPanel : MonoBehaviour
 
         SelectTab(Tab.Guide);
         StartCoroutine(FetchAgoraTokenAndJoin(channel));
+    }
+
+    // 수평 시선 기준 ±60도 안, 4m 이내면 "앞에 보이는 자리"로 본다.
+    static bool IsInFrontOfViewer(Vector3 pos)
+    {
+        var cam = Camera.main;
+        if (cam == null) return true;
+        Vector3 to = pos - cam.transform.position;
+        Vector3 fwd = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up);
+        Vector3 toFlat = Vector3.ProjectOnPlane(to, Vector3.up);
+        float angle = fwd.sqrMagnitude < 0.0001f || toFlat.sqrMagnitude < 0.0001f ? 0f : Vector3.Angle(fwd, toFlat);
+        bool ok = angle <= 60f && to.magnitude <= 4f;
+        Debug.Log($"[MrCallDockPanel] 도크 지정 위치 각도={angle:F0}° 거리={to.magnitude:F2}m → {(ok ? "정보 패널 옆에 고정" : "시선 밖이라 눈앞(HUD)에 표시")}");
+        return ok;
     }
 
     void HandleCallEnded(string channel)
@@ -199,6 +217,8 @@ public class MrCallDockPanel : MonoBehaviour
         _rtcEngine.JoinChannel(tokenResponse.token, channel, 0, options);
         _agoraInCall = true;
         Debug.Log("[MrCallDockPanel][Agora] 채널 join: " + channel);
+        if (recorder == null) yield break; // 녹화 꺼짐
+
         // 녹화 세션 시작 - 실제 MR 화면 녹화는 전용 채널 토큰을 받은 뒤 StartViewCapture에서.
         recorder.Begin(_rtcEngine, channel, VideoCallSignalingMR.CurrentSupportCallId);
 
@@ -230,13 +250,14 @@ public class MrCallDockPanel : MonoBehaviour
         };
         _rtcEngine.Initialize(context);
         _rtcEngine.InitEventHandler(new DockAgoraEventHandler(this));
-        MrCallRecorder.ConfigureEngine(_rtcEngine); // MR 화면 녹화용 외부 비디오 소스 (join 전에 켜야 함)
+        if (EnableCallRecording)
+            MrCallRecorder.ConfigureEngine(_rtcEngine); // MR 화면 녹화용 외부 비디오 소스 (join 전에 켜야 함)
     }
 
     void LeaveAgoraChannel()
     {
         if (!_agoraInCall) return;
-        recorder.End(); // 녹화 마무리 + 전용 채널 나가기 → 업로드
+        recorder?.End(); // 녹화 마무리 + 전용 채널 나가기 → 업로드
         _rtcEngine?.LeaveChannel();
 
         // 내가 먼저 나갈 땐 OnUserOffline이 안 와서 이전 영상 뷰가 남아있을 수 있다(재연결 시
@@ -253,7 +274,7 @@ public class MrCallDockPanel : MonoBehaviour
     {
         if (_rtcEngine != null)
         {
-            recorder.Abort();
+            recorder?.Abort();
             _rtcEngine.LeaveChannel();
             _rtcEngine.Dispose();
         }
@@ -272,7 +293,7 @@ public class MrCallDockPanel : MonoBehaviour
 
         public override void OnJoinChannelSuccess(RtcConnection connection, int elapsed)
         {
-            _owner.recorder.OnJoinChannelSuccess(connection);
+            _owner.recorder?.OnJoinChannelSuccess(connection);
         }
 
         public override void OnUserJoined(RtcConnection connection, uint uid, int elapsed)

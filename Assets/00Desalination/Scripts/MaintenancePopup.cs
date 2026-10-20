@@ -227,7 +227,7 @@ public class MaintenancePopup : MonoBehaviour
                         FadeController.Instance.FadeAndTeleport(() =>
                         {
                             rig.position = targetPoint.position;
-                            rig.rotation = targetPoint.rotation;
+                            rig.rotation = EquipmentMarker.UprightRotation(targetPoint);
                         })
                     );
                 }

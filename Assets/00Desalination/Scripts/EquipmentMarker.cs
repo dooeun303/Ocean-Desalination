@@ -21,6 +21,8 @@ public class EquipmentMarker : MonoBehaviour
     public float outlineWidth = 6f;
     [Tooltip("바닥 링 반지름(m). > 0 이면 이 값을 그대로. 0 이면 설비 바운즈에서 자동(0.4~1.5m)")]
     public float ringRadius = 0.6f;
+    [Tooltip("하이라이트 때 설비 아래 바닥 링을 띄울지. 2026-10-20 요청으로 기본 끔(외곽선만)")]
+    public bool showGroundRing = false;
 
     [Header("설비 정보 패널 (월드 스페이스)")]
     [Tooltip("표시할 정보 패널 루트. 비우면 이 오브젝트의 EquipmentPanel 하위 Canvas")]
@@ -70,6 +72,16 @@ public class EquipmentMarker : MonoBehaviour
     void OnEnable()
     {
         if (!string.IsNullOrEmpty(equipmentId)) _byEquipmentId[equipmentId] = this;
+    }
+
+    // 텔레포트 시 XR Rig에 줄 회전 - 바라보는 수평 방향(Y축)만 쓰고 기울기(X/Z)는 버린다.
+    // teleportPoint를 기울어진 설비 모델(FBX X -90 등)의 자식으로 두면 회전을 통째로 복사했을 때
+    // 시점이 같이 기울었다. forward가 거의 수직이면(모델이 눕혀진 경우) up 축을 대신 쓴다.
+    public static Quaternion UprightRotation(Transform point)
+    {
+        Vector3 dir = Vector3.ProjectOnPlane(point.forward, Vector3.up);
+        if (dir.sqrMagnitude < 0.01f) dir = Vector3.ProjectOnPlane(point.up, Vector3.up);
+        return dir.sqrMagnitude < 0.0001f ? Quaternion.identity : Quaternion.LookRotation(dir.normalized, Vector3.up);
     }
 
     // AR 위치 표시 - Highlight()(알람/유지보수용, 전역 슬롯 1개)와는 별개의 슬롯이라 동시에 떠 있어도
@@ -226,6 +238,11 @@ public class EquipmentMarker : MonoBehaviour
         }
 
         // ── 바닥 링 ──
+        if (!showGroundRing)
+        {
+            _pulseCo = StartCoroutine(Pulse()); // 외곽선 펄스만
+            yield break;
+        }
         Vector3 groundCenter;
         float boundsRadius = 0f;
         if (ringAnchor != null)

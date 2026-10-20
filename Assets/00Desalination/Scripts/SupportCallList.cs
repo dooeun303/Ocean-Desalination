@@ -39,9 +39,7 @@ public class SupportCallList : MonoBehaviour
     public CameraArrivalMotion arrivalCamera;
     [Tooltip("수락 시 끌 오브젝트(메뉴 등). 통화 종료 시 자동으로 다시 켜진다")]
     public GameObject[] hideOnArrival;
-    [Tooltip("유지보수(통화) 중 비활성화할 컴포넌트(이동/텔레포트 로코모션 등). 종료 시 자동 복구. " +
-             "→ 시선(고개 돌리기)은 그대로, 위치 이동만 막음")]
-    public Behaviour[] disableDuringCall;
+    // 2026-10-20: 통화 중 이동 잠금(disableDuringCall) 제거 - "그냥 움직일래". 도착 후에도 자유롭게 이동.
     [Tooltip("도착 연출 테스트(우클릭 메뉴) 대상. 비우면 씬의 첫 EquipmentMarker")]
     public EquipmentMarker testTargetMarker;
 
@@ -171,23 +169,16 @@ public class SupportCallList : MonoBehaviour
         {
             yield return FadeController.Instance.FadeAndTeleport(() =>
             {
-                // 검은 화면인 동안: 설비 앞으로 순간이동 + 메뉴/이동잠금 + 설비 정보 패널 + 도크 발화.
+                // 검은 화면인 동안: 설비 앞으로 순간이동 + 메뉴 숨김 + 설비 정보 패널 + 도크 발화.
                 xrRig.position = targetPoint.position;
-                xrRig.rotation = targetPoint.rotation;
+                xrRig.rotation = EquipmentMarker.UprightRotation(targetPoint);
                 ApplyArrival(marker);
                 // 기존 MrCallDockPanel 등 OnCallAccepted 구독자가 그대로 반응해서 화상통화 화면으로 이어진다.
                 VideoCallSignalingMR.RaiseCallAccepted(data.channel_name, data.id);
-            });
-
-            // 페이드 인 직후: 카메라가 설비 앞에 이쁘게 자리잡는 짧은 모션(Rig는 고정, 카메라 로컬만).
-            var arrivalCam = arrivalCamera != null
-                ? arrivalCamera
-                : (Camera.main != null ? Camera.main.GetComponentInParent<CameraArrivalMotion>() : null);
-            arrivalCam?.Play();
-
-            // 림 글로우 + 바닥 링 하이라이트. marker 자신에게 코루틴을 걸어야 한다 - 이 스크립트(패널)에
-            // 걸면 바로 다음 줄 gameObject.SetActive(false)에서 코루틴이 시작하자마자 죽는다.
-            marker.StartCoroutine(marker.Highlight());
+            },
+            // 화면이 밝아지기 시작하는 순간 바로 도착 연출 - 예전엔 페이드 인이 끝난 뒤(도착 후 약 1.5초)에
+            // 시작해서 멈춰 있다가 움직이는 것처럼 보였다.
+            () => PlayArrivalEffects(marker));
         }
         else
         {
@@ -222,39 +213,42 @@ public class SupportCallList : MonoBehaviour
             yield return FadeController.Instance.FadeAndTeleport(() =>
             {
                 xrRig.position = targetPoint.position;
-                xrRig.rotation = targetPoint.rotation;
+                xrRig.rotation = EquipmentMarker.UprightRotation(targetPoint);
                 ApplyArrival(marker);
-            });
+            },
+            () => PlayArrivalEffects(marker));
         }
         else
         {
             Debug.LogWarning("[SupportCallList] Xr Rig 또는 FadeController 미설정 - 페이드/이동 없이 효과만.");
             ApplyArrival(marker);
+            PlayArrivalEffects(marker);
         }
+    }
+
+    // 카메라가 설비 앞에 자리잡는 짧은 모션(Rig는 고정, 카메라 로컬만) + 설비 외곽선 하이라이트.
+    // 하이라이트 코루틴은 marker 자신에게 건다 - 이 패널은 수락 직후 SetActive(false)라 여기 걸면 바로 죽는다.
+    void PlayArrivalEffects(EquipmentMarker marker)
+    {
         var cam = arrivalCamera != null
             ? arrivalCamera
             : (Camera.main != null ? Camera.main.GetComponentInParent<CameraArrivalMotion>() : null);
         cam?.Play();
-        marker.StartCoroutine(marker.Highlight());
+        if (marker != null) marker.StartCoroutine(marker.Highlight());
     }
 
-    // 도착 시: 메뉴 숨김 + 유지보수 중 이동잠금(시선은 유지) + 해당 설비 정보 패널 표시.
-    // 통화 종료 시 MrArrivalState.RestoreArrival() → 원복.
+    // 도착 시: 메뉴 숨김 + 해당 설비 정보 패널 표시. 통화 종료 시 MrArrivalState.RestoreArrival() → 원복.
     void ApplyArrival(EquipmentMarker marker)
     {
         foreach (var go in hideOnArrival)
             if (go != null) go.SetActive(false);
-        foreach (var b in disableDuringCall)
-            if (b != null) b.enabled = false;
 
         marker.ShowInfo(xrRig); // 데이터 갱신 + XR Rig 기준 왼쪽에 패널을 월드 고정 표시
 
         var hides = hideOnArrival;
-        var locks = disableDuringCall;
         MrArrivalState.OnRestore = () =>
         {
             foreach (var go in hides) if (go != null) go.SetActive(true);
-            foreach (var b in locks) if (b != null) b.enabled = true;
             if (marker != null) marker.HideInfo();
         };
     }

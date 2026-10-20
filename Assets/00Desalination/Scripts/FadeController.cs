@@ -24,7 +24,7 @@ public class FadeController : MonoBehaviour
     }
 
     // FadeAndTeleport 함수 (페이드 함수에 텔레포트까지 합침)
-    public IEnumerator FadeAndTeleport(System.Action onMidpoint)
+    public IEnumerator FadeAndTeleport(System.Action onMidpoint, System.Action onRevealStart = null)
     {
         yield return StartCoroutine(Fade(0f, 1f)); // 페이드인
 
@@ -32,6 +32,7 @@ public class FadeController : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f); // 0.1초 대기
 
+        onRevealStart?.Invoke(); // reveal start - arrival camera motion etc. (2026-10-20)
         yield return StartCoroutine(Fade(1f, 0f)); // 페이드아웃
 
     }
