@@ -144,10 +144,11 @@ public class SupportCallList : MonoBehaviour
 
         Debug.Log("[SupportCallList] 지원 요청 수락: " + data.id + " channel=" + data.channel_name);
 
-        // 작업 가이드 "제목"을 실제 설비/유지보수 데이터로 (6단계 지시문은 하드코딩 유지)
+        // 도크 헤더 제목 = "설비명 · 작업유형" - AR 작업가이드 헤더(MaintenanceTutorialDemo)와 같은 규칙.
+        // 2026-10-21: 예전엔 작업 설명/매뉴얼 제목을 써서 AR "펌프 P-101 · 정기점검"과 MR 제목이 달랐다.
         string _n = string.IsNullOrEmpty(data.equipment_name) ? "설비 미지정" : data.equipment_name;
-        string _d = !string.IsNullOrEmpty(data.maintenance_description) ? data.maintenance_description
-                  : (!string.IsNullOrEmpty(data.work_type) ? data.work_type : "원격 지원");
+        string _d = !string.IsNullOrEmpty(data.work_type) ? WorkTypeKo(data.work_type)
+                  : (!string.IsNullOrEmpty(data.maintenance_description) ? data.maintenance_description : "원격 지원");
         WorkGuidePanel.JobTitle = _n + " · " + _d;
 
         yield return TeleportThenShowDock(data);
@@ -251,6 +252,22 @@ public class SupportCallList : MonoBehaviour
             foreach (var go in hides) if (go != null) go.SetActive(true);
             if (marker != null) marker.HideInfo();
         };
+    }
+
+    // AR MaintenanceTutorialDemo.WorkTypeKo와 같은 매핑 - 영문 코드로 저장된 작업유형도 같은 한글로 보이게.
+    static string WorkTypeKo(string wt)
+    {
+        switch ((wt ?? "").ToLower())
+        {
+            case "inspection": return "점검";
+            case "repair": return "수리";
+            case "replacement": return "교체";
+            case "parts_replacement": return "부품교체";
+            case "maintenance": return "정비";
+            case "emergency": return "긴급";
+            case "regular": return "정기";
+            default: return string.IsNullOrEmpty(wt) ? "작업" : wt;
+        }
     }
 
     EquipmentMarker FindEquipmentMarker(string equipmentId)

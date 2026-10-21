@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
 
 public class EquipmentMarker : MonoBehaviour
 {
@@ -72,6 +73,45 @@ public class EquipmentMarker : MonoBehaviour
     void OnEnable()
     {
         if (!string.IsNullOrEmpty(equipmentId)) _byEquipmentId[equipmentId] = this;
+    }
+
+    // 2026-10-21: "공정정보 조회 패널은 그랩이 안돼?" - 설비(pump1)의 XRSimpleInteractable은 Colliders 목록이
+    // 비어 있어서 자식 Collider를 전부 자기 것으로 가져가는데, 정보 패널이 그 자식이라 패널의 잡기용
+    // BoxCollider까지 설비가 가져갔다(콘솔: "collider ... will remain associated with pump1").
+    // 시작 후 한 프레임 뒤(XRI 등록이 끝난 뒤) 설비 쪽에서 패널 Collider를 빼고, 둘 다 다시 등록시킨다.
+    IEnumerator Start()
+    {
+        yield return null;
+        ReleasePanelCollidersFromParentInteractables();
+    }
+
+    void ReleasePanelCollidersFromParentInteractables()
+    {
+        var p = ResolveInfoPanel();
+        if (p == null || p.transform.parent == null) return;
+        var panelColliders = p.GetComponentsInChildren<Collider>(true);
+        if (panelColliders.Length == 0) return;
+
+        bool changed = false;
+        foreach (var owner in p.transform.parent.GetComponentsInParent<XRBaseInteractable>(true))
+        {
+            int before = owner.colliders.Count;
+            bool wasEnabled = owner.enabled;
+            if (wasEnabled) owner.enabled = false; // 매니저 등록 해제 → 목록 수정 → 다시 등록
+            owner.colliders.RemoveAll(c => System.Array.IndexOf(panelColliders, c) >= 0);
+            if (wasEnabled) owner.enabled = true;
+            changed |= owner.colliders.Count != before;
+        }
+        if (!changed) return;
+
+        // 패널 쪽 잡기도 다시 등록해야 비워진 Collider를 가져간다.
+        foreach (var grab in p.GetComponentsInChildren<XRBaseInteractable>(true))
+        {
+            if (!grab.enabled) continue;
+            grab.enabled = false;
+            grab.enabled = true;
+        }
+        Debug.Log($"[EquipmentMarker] {name}: 정보 패널 Collider를 설비 인터랙터블에서 분리 - 패널 잡기 가능");
     }
 
     // 텔레포트 시 XR Rig에 줄 회전 - 바라보는 수평 방향(Y축)만 쓰고 기울기(X/Z)는 버린다.
@@ -334,6 +374,10 @@ public class EquipmentMarker : MonoBehaviour
 
     // ── 설비 정보 패널 ──
     GameObject _resolvedPanel; // ShowInfo가 부모를 떼면 GetComponentInChildren로는 다시 못 찾으므로 캐시
+    bool? _infoWasActive;      // ShowInfo 직전 패널 켜짐 상태 - HideInfo가 되돌린다
+    bool _infoHomeSaved;       // MoveInfoPanel 전 원래 자리
+    Vector3 _infoHomePos;
+    Quaternion _infoHomeRot;
 
     GameObject ResolveInfoPanel()
     {
@@ -355,8 +399,17 @@ public class EquipmentMarker : MonoBehaviour
         var p = ResolveInfoPanel();
         if (p == null) { Debug.LogWarning("[EquipmentMarker] 정보 패널을 못 찾음 - infoPanel 또는 EquipmentPanel 확인"); return; }
 
+        // 통화가 끝나면(HideInfo) 이 상태로 되돌린다 - 씬에서 원래 켜져 있던 패널이 꺼진 채 남지 않게.
+        if (_infoWasActive == null) _infoWasActive = p.activeSelf;
+        MrArrivalState.Marker = this;
+
         // ★ 씬에 잡아둔 위치 그대로 쓰고 켜기만 한다. 이동/회전/스케일/리페어런트 전부 생략.
-        if (infoPanelJustActivate)
+        // 2026-10-21: Info Panel Anchor가 패널 자기 자신(또는 그 자식)이면 "씬 자리 그대로"라는 뜻이라 같은 처리.
+        // 예전엔 부모(설비)에서 떼고 Info Panel Scale(=1)을 덮어써서, 설비 안에서 작게 줄어 있던 패널이
+        // 캔버스 원래 크기(수백 m)로 커지며 설비 밖으로 빠져나갔다(pump1).
+        bool anchoredToSelf = infoPanelAnchor != null &&
+                              (infoPanelAnchor == p.transform || infoPanelAnchor.IsChildOf(p.transform));
+        if (infoPanelJustActivate || anchoredToSelf)
         {
             p.SetActive(true);
             PublishDockPose(p.transform);
@@ -429,9 +482,51 @@ public class EquipmentMarker : MonoBehaviour
 
     public void ShowInfo() => ShowInfo(null);
 
+    // 원격지원 전 켜짐 상태·자리로 되돌린다(원래 켜져 있던 패널은 켜진 채로, 설비 옆 원래 위치로).
     public void HideInfo()
     {
         var p = ResolveInfoPanel();
-        if (p != null) p.SetActive(false);
+        if (p != null)
+        {
+            if (_infoHomeSaved)
+            {
+                p.transform.localPosition = _infoHomePos;
+                p.transform.localRotation = _infoHomeRot;
+                _infoHomeSaved = false;
+            }
+            p.SetActive(_infoWasActive ?? false);
+        }
+        _infoWasActive = null;
+    }
+
+    // 원격지원 화면 배치용(MrCallDockPanel) - 정보 패널을 사용자 앞 지정 위치로 옮긴다. 부모·크기는 그대로,
+    // 원래 자리(로컬 위치/회전)는 처음 한 번 기억해 두고 HideInfo에서 되돌린다.
+    public Transform InfoPanelTransform => ResolveInfoPanel()?.transform;
+
+    public void MoveInfoPanel(Vector3 worldCenter, Quaternion worldRot)
+    {
+        var p = ResolveInfoPanel();
+        if (p == null) return;
+        if (!_infoHomeSaved)
+        {
+            _infoHomePos = p.transform.localPosition;
+            _infoHomeRot = p.transform.localRotation;
+            _infoHomeSaved = true;
+        }
+        PlaceCentered(p.transform, worldCenter, worldRot);
+    }
+
+    // RectTransform 피벗이 가운데가 아니어도 "보이는 판의 중심"이 worldCenter에 오게 놓는다.
+    public static void PlaceCentered(Transform t, Vector3 worldCenter, Quaternion worldRot)
+    {
+        t.rotation = worldRot;
+        t.position = worldCenter;
+        if (t is RectTransform rt)
+        {
+            var corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            Vector3 center = (corners[0] + corners[2]) * 0.5f;
+            t.position += worldCenter - center;
+        }
     }
 }

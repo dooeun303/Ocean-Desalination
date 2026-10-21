@@ -93,6 +93,10 @@ public class VideoCallSignalingMR : MonoBehaviour
                 {
                     lock (_lockObj) { _pendingArPose = new Vector3(msg.poseX, msg.poseY, msg.poseZ); }
                 }
+                else if (msg != null && msg.type == "support_call_request" && !string.IsNullOrEmpty(msg.id))
+                {
+                    lock (_lockObj) { _pendingSupportCallRequestId = msg.id; }
+                }
             }
             catch (Exception ex)
             {
@@ -141,6 +145,12 @@ public class VideoCallSignalingMR : MonoBehaviour
             {
                 OnArPoseReceived?.Invoke(_pendingArPose.Value);
                 _pendingArPose = null;
+            }
+
+            if (_pendingSupportCallRequestId != null)
+            {
+                OnSupportCallRequested?.Invoke(_pendingSupportCallRequestId);
+                _pendingSupportCallRequestId = null;
             }
         }
     }
@@ -193,6 +203,11 @@ public class VideoCallSignalingMR : MonoBehaviour
     // 가장 최근 OnArLocationReceived 시점의 로컬 좌표로 보정한 오프셋을 더해야 한다 - ArLocationSync 참고.
     public static event Action<Vector3> OnArPoseReceived; // AR 로컬 좌표 (보정 전)
     private Vector3? _pendingArPose = null;
+
+    // 2026-10-20: AR이 원격지원을 요청하면 서버가 { type: "support_call_request", id } 를 MR에 보낸다 -
+    // 예전엔 무시하고 목록을 열어야만 알 수 있었다. SupportCallRequestAlert가 구독해서 알림 팝업을 띄운다.
+    public static event Action<string> OnSupportCallRequested; // remote_support.id
+    private string _pendingSupportCallRequestId = null;
 
     [Header("디버그/테스트용 (AR 없이 확인할 때만 사용, 안 쓰면 비워둬도 됨)")]
     [Tooltip("씬의 EquipmentMarker 중 하나에 적힌 equipmentId를 그대로 복사해서 넣고, " +
@@ -299,6 +314,14 @@ public class VideoCallSignalingMR : MonoBehaviour
         Send(new CallSignalMessage { type = "model_view", modelViewOpen = open, modelUrl = modelUrl });
     }
 
+    // 이미 JSON으로 만든 메시지를 그대로 보낸다(AlarmWebSocket이 끊겼을 때 파일공유 등 대신 전송용).
+    public bool SendRaw(string json)
+    {
+        if (_ws == null || _ws.ReadyState != WebSocketState.Open) return false;
+        _ws.Send(json);
+        return true;
+    }
+
     void Send(CallSignalMessage msg)
     {
         string json = JsonConvert.SerializeObject(msg);
@@ -388,6 +411,7 @@ public class CallSignalMessage
     public bool modelViewOpen;  // model_view 전용 - 3D 모델 창이 열렸는지
     public string modelUrl;     // model_view 전용 - open=true일 때 AR이 불러올 glb URL
     public string equipmentId;  // ar_location 전용 - AR이 QR로 인식한 설비의 equipment.id (uuid)
+    public string id;           // support_call_request 전용 - remote_support.id (서버 support_call.js POST가 보냄)
     public float poseX;         // ar_pose 전용 - AR 6DoF 카메라 로컬 좌표 (AR 자체 좌표계, 트윈 좌표 아님)
     public float poseY;         // ar_pose 전용
     public float poseZ;         // ar_pose 전용

@@ -64,8 +64,13 @@ public class InstructionDrawing : MonoBehaviour,
         sendButton?.onClick.AddListener(OnSend);
         cancelButton?.onClick.AddListener(OnCancel);
 
-        drawingPanel?.SetActive(false);
+        // 2026-10-21: "지시하기를 두 번 눌러야 뜬다" - 이 컴포넌트가 꺼진 패널 자신에 붙어 있어서 Start()는
+        // 첫 Open()으로 패널이 켜진 다음 프레임에야 처음 돈다. 여기서 무조건 끄면 방금 연 패널이 바로 닫혔다.
+        // Open()이 먼저 불렸으면 그대로 둔다.
+        if (!_openedBeforeStart && drawingPanel) drawingPanel.SetActive(false);
     }
+
+    bool _openedBeforeStart;
 
     // ─────────────────────────────────────────
     // 지시하기 버튼 클릭 → 창 열기
@@ -89,7 +94,8 @@ public class InstructionDrawing : MonoBehaviour,
         _undoStack.Clear();
         SetMode(DrawMode.Pen);
 
-        drawingPanel?.SetActive(true);
+        _openedBeforeStart = true;
+        if (drawingPanel) drawingPanel.SetActive(true);
         Debug.Log("[InstructionDrawing] 그리기 창 열림");
     }
 
@@ -334,13 +340,13 @@ public class InstructionDrawing : MonoBehaviour,
         if (req.result == UnityWebRequest.Result.Success)
         {
             Debug.Log("[InstructionDrawing] 전송 완료");
-            ShowAlert("전송이 성공되었습니다.");
+            ShowAlert("지시하기 전송이 완료되었습니다."); // 파일공유 토스트("정보공유가 완료되었습니다.")와 같은 형식
             StartCoroutine(CloseAfterDelay(3f));
         }
         else
         {
             Debug.LogError("[InstructionDrawing] 전송 실패: " + req.error);
-            ShowAlert($"전송이 실패하였습니다.{ req.error}");
+            ShowAlert("지시하기 전송에 실패했습니다.");
         }
     }
 

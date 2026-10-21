@@ -116,8 +116,8 @@ public class EquipmentPanel : MonoBehaviour
         var d = response.data;
         if (nameText) nameText.text = d.name;
         if (idText) idText.text = d.id;
-        if (typeText) typeText.text = d.equipment_type;
-        if (statusText) statusText.text = d.status;
+        if (typeText) typeText.text = TypeKo(d.equipment_type);
+        if (statusText) statusText.text = StatusKo(d.status);
         if (modelText) modelText.text = d.model ?? "-";
         if (serialNoText) serialNoText.text = d.serial_no ?? "-";
 
@@ -148,7 +148,15 @@ public class EquipmentPanel : MonoBehaviour
 
         foreach (var sensor in response.data)
         {
-            string value = $"{sensor.value:F1} {sensor.unit}";
+            // AR QR 패널과 같은 자릿수(온도 F1 / 압력·진동 F2 / RPM 정수) - 같은 값이 다르게 보이지 않게.
+            string fmt = sensor.sensor_type switch
+            {
+                "pressure" => "F2",
+                "vibration" => "F2",
+                "rpm" => "F0",
+                _ => "F1",
+            };
+            string value = $"{sensor.value.ToString(fmt)} {sensor.unit}";
             string status = sensor.status switch
             {
                 "critical" => "초과",
@@ -179,6 +187,25 @@ public class EquipmentPanel : MonoBehaviour
 
         Debug.Log("[EquipmentPanel] 센서 데이터 바인딩 완료");
     }
+
+    static string TypeKo(string t) => (t ?? "").ToUpper() switch
+    {
+        "PUMP" => "펌프",
+        "HIGH_PRESSURE_PUMP" => "고압펌프",
+        "VALVE" => "밸브",
+        "TANK" => "탱크",
+        "LAPTOP" => "노트북",
+        _ => string.IsNullOrEmpty(t) ? "-" : t,
+    };
+
+    static string StatusKo(string s) => (s ?? "").ToLower() switch
+    {
+        "normal" => "정상",
+        "warning" => "주의",
+        "fault" => "고장",
+        "maintenance" => "정비중",
+        _ => string.IsNullOrEmpty(s) ? "-" : s,
+    };
 
     // ─────────────────────────────────────────
     // 값 텍스트 자동 찾기 (texts[1] = 값)

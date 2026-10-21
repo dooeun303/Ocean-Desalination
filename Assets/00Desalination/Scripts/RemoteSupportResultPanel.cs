@@ -108,7 +108,24 @@ public class RemoteSupportResultPanel : MonoBehaviour
         if (recButtonLabel) recButtonLabel.text = "���� ��� ����";
         foreach (var g in resultButtonGraphics) if (g) g.color = normalColor;
         foreach (var m in selectedMarks) if (m) m.SetActive(false);
+        ApplyVoiceMemoVisibility();
         StopMic(false);
+    }
+
+    // 2026-10-21: 결과 저장 패널의 음성 기록(녹음 버튼·상태·음량 막대·예시)을 잠시 끈다. true로 바꾸면 다시 보임.
+    // 끄면 아이템 컨테이너의 "음성 기록" 제목, 음성상태, progress bar, 예시 칸만 숨기고 결과 선택 버튼은 그대로.
+    const bool EnableVoiceMemo = false;
+
+    void ApplyVoiceMemoVisibility()
+    {
+        if (statusText) statusText.transform.parent.gameObject.SetActive(EnableVoiceMemo);   // 음성상태(녹음 버튼 + 상태 문구)
+        if (progressBar) progressBar.transform.parent.gameObject.SetActive(EnableVoiceMemo); // progress bar
+        if (exampleText) exampleText.transform.parent.gameObject.SetActive(EnableVoiceMemo); // 음성기록 예시 칸
+        if (itemContainer)
+        {
+            var title = itemContainer.transform.Find("Text (TMP) (1)"); // "음성 기록" 제목
+            if (title) title.gameObject.SetActive(EnableVoiceMemo);
+        }
     }
 
     // ���� ��ư OnClick: ��� ���� (�ذ�Ϸ��0, ��ҡ�1, ������������2, ��Ÿ��3). ����: 1���� ���� ����

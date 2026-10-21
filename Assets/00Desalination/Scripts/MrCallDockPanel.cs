@@ -29,8 +29,8 @@ public class MrCallDockPanel : MonoBehaviour
 
     const float PanelWidth = 900f;
     const float VideoHeight = 520f;
-    const float HeaderHeight = 80f;
-    const float TabBarHeight = 64f;
+    const float HeaderHeight = 100f; // 2026-10-21 글씨 1.3배에 맞춰 80→100
+    const float TabBarHeight = 76f;  // 64→76
     // 2026-08-24: 작업가이드 탭이 단계 목록(퀘스트 리스트 스타일)으로 바뀌면서 세로 공간이 더
     // 필요해져서 280→420으로 키움 (WorkGuidePanel.cs의 900x560 캔버스가 이 안에 임베드될 때
     // 글자가 너무 작게 축소되는 걸 방지 - SetEmbedParent의 균일 축소 배율 참고).
@@ -58,6 +58,9 @@ public class MrCallDockPanel : MonoBehaviour
 
     InstructionDrawing instructionDrawing;
     InfoShareManager infoShareManager;
+    // 파일공유(DropZone)와 지시하기(InstructionDrawing) 전송 결과가 같이 쓰는 검은 토스트
+    GameObject shareAlertGo;
+    TMPro.TMP_Text shareAlertText;
     string channelName;
 
     Text callTimeText;
@@ -81,9 +84,9 @@ public class MrCallDockPanel : MonoBehaviour
     bool worldAnchored;
 
     // 통화 수락~종료 동안 AR 원격 영상 / MR 시점 화면을 mp4로 녹화 → 종료 시 서버 업로드.
-    // 2026-10-20: 시연 영상 촬영 중 기기 화면 녹화로 대신하기로 해서 일단 끔. true로 바꾸면 그대로 다시 동작.
+    // 2026-10-20 잠시 껐다가 2026-10-21 다시 켬(영상·통화 음성 저장 필요). false로 바꾸면 녹화 안 함.
     // 꺼져 있으면 recorder가 null - 녹화 전용 채널/토큰/외부 비디오 소스도 안 쓴다.
-    const bool EnableCallRecording = false;
+    const bool EnableCallRecording = true;
     MrCallRecorder recorder;
 
     void Awake()
@@ -120,18 +123,97 @@ public class MrCallDockPanel : MonoBehaviour
         grabbedOnce = false; // 새 통화마다 기본 HUD 위치에서 다시 시작
         canvasGo.SetActive(true);
 
+        // 2026-10-21: 원격지원으로 설비 앞에 도착했으면 세 패널을 시선 기준으로 한 번에 배치한다
+        // (왼쪽 공정정보 · 가운데 화상통화 · 오른쪽 정보공유). 그 외(설비 없이 통화)는 아래 기존 방식.
+        bool arrivedAtEquipment = MrArrivalState.Marker != null && Camera.main != null;
         // 유지보수 도착 연출이 도크 위치를 지정했으면(정보 패널 옆) 카메라 HUD 대신 거기에 월드 고정.
-        // 단, 그 자리가 지금 시선에서 벗어나 있으면(옆/뒤/멀리) 도착 직후 도크가 안 보이므로 HUD로 띄운다.
-        worldAnchored = MrArrivalState.HasDockPose && IsInFrontOfViewer(MrArrivalState.DockPos);
-        if (worldAnchored)
+        // 단, 그 자리가 지금 시선에서 벗어나 있으면(옆/뒤/멀리) 도착 직후 도크가 안 보이므로 눈앞에 둔다.
+        worldAnchored = arrivedAtEquipment ||
+                        (MrArrivalState.HasDockPose && IsInFrontOfViewer(MrArrivalState.DockPos));
+        if (arrivedAtEquipment)
+        {
+            LayoutArrivalPanels(MrArrivalState.Marker);
+        }
+        else if (worldAnchored)
         {
             canvasGo.transform.SetParent(null, true);
             canvasGo.transform.SetPositionAndRotation(MrArrivalState.DockPos, MrArrivalState.DockRot);
             canvasGo.transform.localScale = Vector3.one * MrUiTheme.HudScale;
         }
+        else
+        {
+            PlaceInFrontOfViewer(); // 한 번만 눈앞에 놓고 고정 (따라다니지 않음)
+        }
 
         SelectTab(Tab.Guide);
         StartCoroutine(FetchAgoraTokenAndJoin(channel));
+    }
+
+    // ── 도착 시 패널 배치 ──
+    // 가운데 도크는 정면 DockDepth, 양옆 자리는 시선에서 ±SideYaw 돌린 방향 SideDistance(조금 더 가깝게)에
+    // 두고 사용자 쪽을 바라보게 돌린다 - 양옆이 살짝 안쪽으로 기울어진 "부채꼴" 배치.
+    // 도착 때는 왼쪽(공정정보)과 가운데(화상통화)만 놓고, 오른쪽 자리는 기억만 해 둔다 -
+    // 정보공유/지시하기 패널은 도크의 버튼을 눌렀을 때 그 자리에 뜬다(OnOpen…Clicked).
+    const float SideYaw = 38f;
+    const float SideDistance = 3.0f; // 2026-10-21 "너무 앞에 나와 있어" 1.8 → 2.4 (가운데 도크 2.2보다 살짝 뒤)
+
+    bool hasRightSlot;
+    Vector3 rightSlotPos;
+    Quaternion rightSlotRot;
+
+    // 오른쪽 자리에 옮긴 씬 패널들의 원래 자리(부모 기준) - 통화가 끝나면 되돌린다.
+    class MovedPanel { public Transform t; public Vector3 pos; public Quaternion rot; public bool wasActive; }
+    readonly System.Collections.Generic.List<MovedPanel> movedPanels = new System.Collections.Generic.List<MovedPanel>();
+
+    void LayoutArrivalPanels(EquipmentMarker marker)
+    {
+        var cam = Camera.main.transform;
+        Vector3 fwd = Vector3.ProjectOnPlane(cam.forward, Vector3.up);
+        if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.ProjectOnPlane(cam.up, Vector3.up);
+        fwd.Normalize();
+        Vector3 eye = cam.position;
+        Quaternion Facing(Vector3 p) => Quaternion.LookRotation(Vector3.ProjectOnPlane(p - eye, Vector3.up).normalized, Vector3.up);
+        Vector3 Side(float yaw) => eye + Quaternion.AngleAxis(yaw, Vector3.up) * fwd * SideDistance;
+
+        // 가운데: 화상통화 도크
+        canvasGo.transform.SetParent(null, true);
+        canvasGo.transform.localScale = Vector3.one * MrUiTheme.HudScale;
+        Vector3 center = eye + fwd * DockDepth;
+        EquipmentMarker.PlaceCentered(canvasGo.transform, center, Facing(center));
+
+        // 왼쪽: 공정정보 패널 (크기·부모 그대로, 통화 끝나면 EquipmentMarker.HideInfo가 원래 자리로)
+        Vector3 left = Side(-SideYaw);
+        marker.MoveInfoPanel(left, Facing(left));
+
+        // 오른쪽: 자리만 기억 (정보공유/지시하기 버튼을 누르면 여기에 뜬다)
+        rightSlotPos = Side(SideYaw);
+        rightSlotRot = Facing(rightSlotPos);
+        hasRightSlot = true;
+        Debug.Log("[MrCallDockPanel] 도착 화면 배치: 공정정보(왼쪽) · 화상통화(가운데), 오른쪽은 버튼 패널 자리");
+    }
+
+    // 정보공유/지시하기 패널을 오른쪽 자리에 놓는다. 원래 자리는 처음 한 번 기억해 두고 통화 끝에 되돌린다.
+    // 도착 배치가 없던 통화(설비 없이 받은 통화)면 씬에 놓인 자리 그대로 둔다.
+    void PlaceInRightSlot(Transform t, bool wasActiveBeforeOpen)
+    {
+        if (!hasRightSlot || t == null) return;
+        if (!movedPanels.Exists(m => m.t == t))
+            movedPanels.Add(new MovedPanel { t = t, pos = t.localPosition, rot = t.localRotation, wasActive = wasActiveBeforeOpen });
+        EquipmentMarker.PlaceCentered(t, rightSlotPos, rightSlotRot);
+    }
+
+    // 통화가 끝나면 오른쪽 자리에 옮겼던 패널을 원래 자리·켜짐 상태로 되돌린다.
+    void RestoreSharePanel()
+    {
+        foreach (var m in movedPanels)
+        {
+            if (m.t == null) continue;
+            m.t.localPosition = m.pos;
+            m.t.localRotation = m.rot;
+            m.t.gameObject.SetActive(m.wasActive);
+        }
+        movedPanels.Clear();
+        hasRightSlot = false;
     }
 
     // 수평 시선 기준 ±60도 안, 4m 이내면 "앞에 보이는 자리"로 본다.
@@ -144,7 +226,7 @@ public class MrCallDockPanel : MonoBehaviour
         Vector3 toFlat = Vector3.ProjectOnPlane(to, Vector3.up);
         float angle = fwd.sqrMagnitude < 0.0001f || toFlat.sqrMagnitude < 0.0001f ? 0f : Vector3.Angle(fwd, toFlat);
         bool ok = angle <= 60f && to.magnitude <= 4f;
-        Debug.Log($"[MrCallDockPanel] 도크 지정 위치 각도={angle:F0}° 거리={to.magnitude:F2}m → {(ok ? "정보 패널 옆에 고정" : "시선 밖이라 눈앞(HUD)에 표시")}");
+        Debug.Log($"[MrCallDockPanel] 도크 지정 위치 각도={angle:F0}° 거리={to.magnitude:F2}m → {(ok ? "정보 패널 옆에 고정" : "시선 밖이라 눈앞에 고정")}");
         return ok;
     }
 
@@ -154,6 +236,7 @@ public class MrCallDockPanel : MonoBehaviour
         canvasGo.SetActive(false);
         LeaveAgoraChannel();
         EquipmentMarker.CurrentlyHighlighted?.StopHighlight();
+        RestoreSharePanel();
         MrArrivalState.RestoreArrival(); // 수락 시 숨겼던 메뉴 등 원복
     }
 
@@ -161,6 +244,7 @@ public class MrCallDockPanel : MonoBehaviour
     {
         canvasGo.SetActive(false);
         // 아직 join 전이라(수락 전에는 Agora 채널에 들어가지 않음) 나갈 것도 없음.
+        RestoreSharePanel();
         MrArrivalState.RestoreArrival();
     }
 
@@ -176,6 +260,7 @@ public class MrCallDockPanel : MonoBehaviour
             LeaveAgoraChannel();
         }
         EquipmentMarker.CurrentlyHighlighted?.StopHighlight();
+        RestoreSharePanel();
         MrArrivalState.RestoreArrival();
     }
 
@@ -362,6 +447,9 @@ public class MrCallDockPanel : MonoBehaviour
             return;
         }
         instructionDrawing.videoImageParent = videoContainer;
+        // 2026-10-21: 전송 결과도 파일공유와 같은 검은 토스트(도크 영상 칸 하단)로 - 씬의 별도 알림 패널 대신.
+        instructionDrawing.alertPanel = shareAlertGo;
+        instructionDrawing.alertText = shareAlertText;
     }
 
     // "파일공유·지시" 탭에 지시하기 버튼밖에 없어서 "파일공유" 버튼도 추가해달라는 요청 -
@@ -417,19 +505,23 @@ public class MrCallDockPanel : MonoBehaviour
             ? $"진행중 · {guide.StepIndex + 1} / {guide.StepCount}단계"
             : "";
 
-        // WorkGuidePanel.cs와 동일한 카메라 앞 HUD 방식 - 씬의 실제 화상통화 패널 좌표를 몰라서
-        // 이 도크도 독립적으로 카메라 앞에 고정 오프셋으로 띄운다.
-        // 월드 고정 모드(유지보수 도착)면 카메라 앞 추적을 건너뛴다 - 손으로 잡아 옮기는 건 여전히 가능.
-        if (worldAnchored) return;
+        // 2026-10-21: "화상통화 패널이 시야를 따라다니지 않게" - 예전엔 카메라에 붙여 HUD로 따라다녔다.
+        // 이제 통화 수락 때 한 번만 놓고(정보 패널 옆 또는 눈앞, HandleCallAccepted) 월드에 고정한다.
+        // 손으로 잡아 옮기는 건 그대로 가능.
+    }
 
+    // 지금 시선의 수평 방향 앞(DockDepth), 눈높이에 월드 고정으로 놓는다 - 이후 고개를 돌려도 안 따라온다.
+    void PlaceInFrontOfViewer()
+    {
         var cam = Camera.main;
-        if (!grabbedOnce && cam != null && canvasGo.transform.parent != cam.transform)
-        {
-            canvasGo.transform.SetParent(cam.transform, false);
-            canvasGo.transform.localPosition = new Vector3(0f, 0f, DockDepth);
-            canvasGo.transform.localRotation = Quaternion.identity;
-            canvasGo.transform.localScale = Vector3.one * MrUiTheme.HudScale;
-        }
+        canvasGo.transform.SetParent(null, true);
+        canvasGo.transform.localScale = Vector3.one * MrUiTheme.HudScale;
+        if (cam == null) return;
+        Vector3 fwd = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up);
+        if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.ProjectOnPlane(cam.transform.up, Vector3.up);
+        fwd.Normalize();
+        canvasGo.transform.SetPositionAndRotation(cam.transform.position + fwd * DockDepth,
+                                                   Quaternion.LookRotation(fwd, Vector3.up));
     }
 
     void BuildUI()
@@ -478,20 +570,25 @@ public class MrCallDockPanel : MonoBehaviour
         var titleGo = new GameObject("Title");
         titleGo.transform.SetParent(headerGo.transform, false);
         var title = titleGo.AddComponent<Text>();
-        title.font = font; title.fontSize = 28; title.color = MrUiTheme.Ink;
+        title.font = font; title.fontSize = 36; title.color = MrUiTheme.Ink; // 2026-10-21 도크 글씨 1.3배
         title.text = "작업 준비 중...";
         title.alignment = TextAnchor.UpperLeft;
+        // 글씨를 키우면서 한 줄 높이가 칸(40px)보다 커져 제목이 통째로 안 그려졌다 - 넘쳐도 그리게 하고
+        // 오른쪽 닫기 버튼(56px)과 겹치지 않게 비켜 둔다.
+        title.verticalOverflow = VerticalWrapMode.Overflow;
+        title.horizontalOverflow = HorizontalWrapMode.Overflow;
         headerTitleText = title;
         var titleRect = title.rectTransform;
         titleRect.anchorMin = new Vector2(0f, 0.5f); titleRect.anchorMax = new Vector2(1f, 1f);
-        titleRect.offsetMin = new Vector2(30f, 0f); titleRect.offsetMax = new Vector2(-30f, -10f);
+        titleRect.offsetMin = new Vector2(30f, 0f); titleRect.offsetMax = new Vector2(-90f, -8f);
 
         var statusGo = new GameObject("Status");
         statusGo.transform.SetParent(headerGo.transform, false);
         var status = statusGo.AddComponent<Text>();
-        status.font = font; status.fontSize = 20; status.color = MrUiTheme.Warn;
+        status.font = font; status.fontSize = 26; status.color = MrUiTheme.Warn;
         status.text = "";
         status.alignment = TextAnchor.LowerLeft;
+        status.verticalOverflow = VerticalWrapMode.Overflow;
         headerStatusText = status;
         var statusRect = status.rectTransform;
         statusRect.anchorMin = new Vector2(0f, 0f); statusRect.anchorMax = new Vector2(1f, 0.5f);
@@ -550,7 +647,7 @@ public class MrCallDockPanel : MonoBehaviour
         var callTimeTextGo = new GameObject("Text");
         callTimeTextGo.transform.SetParent(callTimeGo.transform, false);
         callTimeText = callTimeTextGo.AddComponent<Text>();
-        callTimeText.font = font; callTimeText.fontSize = 20; callTimeText.color = MrUiTheme.Danger;
+        callTimeText.font = font; callTimeText.fontSize = 26; callTimeText.color = MrUiTheme.Danger;
         callTimeText.text = "00:00";
         callTimeText.alignment = TextAnchor.MiddleCenter;
         var callTimeTextRect = callTimeText.rectTransform;
@@ -575,7 +672,7 @@ public class MrCallDockPanel : MonoBehaviour
         var spinnerTextGo = new GameObject("Text");
         spinnerTextGo.transform.SetParent(spinnerGo.transform, false);
         var spinnerText = spinnerTextGo.AddComponent<Text>();
-        spinnerText.font = font; spinnerText.fontSize = 24; spinnerText.color = MrUiTheme.InkDim;
+        spinnerText.font = font; spinnerText.fontSize = 31; spinnerText.color = MrUiTheme.InkDim;
         spinnerText.text = "연결 대기 중";
         spinnerText.alignment = TextAnchor.MiddleCenter;
         var spinnerTextRect = spinnerText.rectTransform;
@@ -598,7 +695,7 @@ public class MrCallDockPanel : MonoBehaviour
         var dropZone = dropOverlayGo.AddComponent<DropZone>();
         dropZone.dropZoneImage = dropOverlayImg;
 
-        var shareAlertGo = new GameObject("ShareAlert");
+        shareAlertGo = new GameObject("ShareAlert");
         shareAlertGo.transform.SetParent(videoGo.transform, false);
         var shareAlertBg = shareAlertGo.AddComponent<Image>();
         shareAlertBg.color = new Color(0f, 0f, 0f, 0.75f);
@@ -606,16 +703,16 @@ public class MrCallDockPanel : MonoBehaviour
         var shareAlertRect = shareAlertBg.rectTransform;
         shareAlertRect.anchorMin = new Vector2(0.5f, 0f); shareAlertRect.anchorMax = new Vector2(0.5f, 0f);
         shareAlertRect.pivot = new Vector2(0.5f, 0f);
-        shareAlertRect.sizeDelta = new Vector2(360f, 50f);
+        shareAlertRect.sizeDelta = new Vector2(460f, 64f);
         shareAlertRect.anchoredPosition = new Vector2(0f, 16f);
         shareAlertGo.SetActive(false);
 
         var shareAlertTextGo = new GameObject("Text");
         shareAlertTextGo.transform.SetParent(shareAlertGo.transform, false);
-        var shareAlertText = shareAlertTextGo.AddComponent<TMPro.TextMeshProUGUI>();
+        shareAlertText = shareAlertTextGo.AddComponent<TMPro.TextMeshProUGUI>();
         // TMP_FontAsset은 이 파일이 쓰는 다른 UI(legacy Text)와 달리 직접 안 만든다 -
         // TextMeshProUGUI는 비워두면 TMP_Settings.defaultFontAsset을 알아서 쓴다.
-        shareAlertText.fontSize = 20; shareAlertText.color = Color.white;
+        shareAlertText.fontSize = 26; shareAlertText.color = Color.white;
         shareAlertText.alignment = TMPro.TextAlignmentOptions.Center;
         var shareAlertTextRect = shareAlertText.rectTransform;
         shareAlertTextRect.anchorMin = Vector2.zero; shareAlertTextRect.anchorMax = Vector2.one;
@@ -717,7 +814,7 @@ public class MrCallDockPanel : MonoBehaviour
         var hint = new GameObject("Hint");
         hint.transform.SetParent(go.transform, false);
         var hintText = hint.AddComponent<Text>();
-        hintText.font = font; hintText.fontSize = 20; hintText.color = MrUiTheme.InkDim;
+        hintText.font = font; hintText.fontSize = 26; hintText.color = MrUiTheme.InkDim;
         hintText.text = "파일공유: 자료 아이콘을 화상통화 화면에 드래그하면 AR에 전송됩니다.\n지시하기: 현재 화면을 캡처해서 화살표·스티커로 짚어 AR에 전송합니다.";
         hintText.alignment = TextAnchor.UpperCenter;
         hintText.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -727,7 +824,7 @@ public class MrCallDockPanel : MonoBehaviour
 
         // "파일공유·지시" 탭에 지시하기 버튼밖에 없다는 요청으로, 씬에 이미 있는 정보공유_상세
         // (InfoShareManager) 팝업을 여는 "파일공유" 버튼을 위쪽에 하나 더 쌓는다.
-        CreateActionButton(go.transform, font, "FileShareBtn", "파일공유 열기", new Vector2(0f, 90f), OnOpenFileShareClicked);
+        CreateActionButton(go.transform, font, "FileShareBtn", "파일공유 열기", new Vector2(0f, 104f), OnOpenFileShareClicked);
         CreateActionButton(go.transform, font, "OpenInstructionBtn", "지시하기 열기", new Vector2(0f, 10f), OnOpenInstructionDrawingClicked);
 
         go.SetActive(false);
@@ -749,13 +846,13 @@ public class MrCallDockPanel : MonoBehaviour
         var btnRect = btnImg.rectTransform;
         btnRect.anchorMin = new Vector2(0.5f, 0f); btnRect.anchorMax = new Vector2(0.5f, 0f);
         btnRect.pivot = new Vector2(0.5f, 0f);
-        btnRect.sizeDelta = new Vector2(260f, 70f);
+        btnRect.sizeDelta = new Vector2(320f, 84f);
         btnRect.anchoredPosition = anchoredPosition;
 
         var btnLabelGo = new GameObject("Label");
         btnLabelGo.transform.SetParent(btnGo.transform, false);
         var btnLabel = btnLabelGo.AddComponent<Text>();
-        btnLabel.font = font; btnLabel.fontSize = 24; btnLabel.color = MrUiTheme.Ink;
+        btnLabel.font = font; btnLabel.fontSize = 31; btnLabel.color = MrUiTheme.Ink;
         btnLabel.text = label;
         btnLabel.alignment = TextAnchor.MiddleCenter;
         btnLabel.raycastTarget = false;
@@ -771,7 +868,10 @@ public class MrCallDockPanel : MonoBehaviour
             Debug.LogWarning("[MrCallDockPanel] InfoShareManager 연결 안 됨 - 파일공유를 열 수 없음.");
             return;
         }
-        infoShareManager.gameObject.SetActive(true); // OnEnable()에서 바로 파일 목록을 불러온다
+        var go = infoShareManager.gameObject;
+        bool wasActive = go.activeSelf;
+        go.SetActive(true); // OnEnable()에서 바로 파일 목록을 불러온다
+        PlaceInRightSlot(go.transform, wasActive); // 원격지원 도착 화면이면 화상통화 오른쪽에
     }
 
     void OnOpenInstructionDrawingClicked()
@@ -781,7 +881,11 @@ public class MrCallDockPanel : MonoBehaviour
             Debug.LogWarning("[MrCallDockPanel] InstructionDrawing 연결 안 됨 - 지시하기를 열 수 없음.");
             return;
         }
+        var panel = instructionDrawing.drawingPanel;
+        bool wasActive = panel != null && panel.activeSelf;
         instructionDrawing.Open();
+        // Open()이 화면 캡처에 실패하면 패널이 안 열린다 - 열렸을 때만 오른쪽 자리로 옮긴다.
+        if (panel != null && panel.activeSelf) PlaceInRightSlot(panel.transform, wasActive);
     }
 
     Button CreateTab(Transform parent, string label, Font font, out Text labelText, out Image underline)
@@ -796,7 +900,7 @@ public class MrCallDockPanel : MonoBehaviour
         var textGo = new GameObject("Label");
         textGo.transform.SetParent(go.transform, false);
         labelText = textGo.AddComponent<Text>();
-        labelText.font = font; labelText.fontSize = 24;
+        labelText.font = font; labelText.fontSize = 31;
         labelText.text = label;
         labelText.alignment = TextAnchor.MiddleCenter;
         labelText.raycastTarget = false;

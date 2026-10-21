@@ -38,7 +38,7 @@ public class WorkGuidePanel : MonoBehaviour
             "펌프 받침대와 베어링 하우징 고정 볼트가 빠지거나 헐거워 보이지 않는지, 주변에 녹이나 틈이 없는지 육안으로 확인하세요."),
     };
 
-    // MrCallDockPanel 헤더가 그대로 가져다 쓴다. 스텝 로드 시 manual.title 로 갱신된다.
+    // MrCallDockPanel 헤더가 그대로 가져다 쓴다. SupportCallList가 수락 시 "설비명 · 작업유형"으로 정한다.
     public static string JobTitle = "작업 가이드";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -78,9 +78,10 @@ public class WorkGuidePanel : MonoBehaviour
     // MrCallDockPanel 도크에 임베드되면 카메라 추적을 멈추고 SetEmbedParent 위치에 붙어있는다.
     bool embedded;
 
-    const float RowHeight = 38f;
-    const float RowGap = 4f;
-    const float ListTop = 54f;
+    const float RowHeight = 49f; // 2026-10-21 글씨 1.3배에 맞춰 줄 높이도 1.3배 (38→49)
+    const float RowGap = 5f;
+    const float ListTop = 70f;
+    const float DescGap = 24f; // 단계 목록과 상세 설명 사이 (10 → 24, 글씨 1.3배 후 붙어 보여서)
 
     void Awake()
     {
@@ -190,9 +191,8 @@ public class WorkGuidePanel : MonoBehaviour
             steps.AddRange(FallbackSteps);
         }
 
-        // manual.title 을 받았을 때만 헤더 제목 갱신. 없으면 SupportCallList가 설정한 값 유지.
-        if (!string.IsNullOrEmpty(manualTitle))
-            JobTitle = manualTitle;
+        // 헤더 제목(JobTitle)은 SupportCallList가 정한 "설비명 · 작업유형"을 그대로 둔다 - AR과 같게.
+        // 2026-10-21: 예전엔 여기서 manual.title("…베어링 마모 점검 매뉴얼")로 덮어써서 AR 제목과 달랐다.
 
         stepIndex = 0;
         completed = new bool[steps.Count];
@@ -302,13 +302,13 @@ public class WorkGuidePanel : MonoBehaviour
         countGo.transform.SetParent(panel.transform, false);
         stepCountText = countGo.AddComponent<Text>();
         stepCountText.font = font;
-        stepCountText.fontSize = 26;
+        stepCountText.fontSize = 34;
         stepCountText.alignment = TextAnchor.MiddleLeft;
         stepCountText.color = MrUiTheme.InkDim;
         var countRect = countGo.GetComponent<RectTransform>();
         countRect.anchorMin = new Vector2(0f, 1f); countRect.anchorMax = new Vector2(1f, 1f);
         countRect.pivot = new Vector2(0.5f, 1f);
-        countRect.sizeDelta = new Vector2(-60f, 44f); countRect.anchoredPosition = new Vector2(0f, 0f);
+        countRect.sizeDelta = new Vector2(-60f, 57f); countRect.anchoredPosition = new Vector2(0f, 0f);
 
         // ── 스텝 목록 컨테이너(비어있음) ──
         listGo = new GameObject("StepList");
@@ -324,15 +324,15 @@ public class WorkGuidePanel : MonoBehaviour
         mrTextGo.transform.SetParent(panel.transform, false);
         mrStepText = mrTextGo.AddComponent<Text>();
         mrStepText.font = font;
-        mrStepText.fontSize = 22;
+        mrStepText.fontSize = 29;
         mrStepText.alignment = TextAnchor.UpperLeft;
         mrStepText.color = MrUiTheme.InkDim;
         mrStepText.horizontalOverflow = HorizontalWrapMode.Wrap;
         mrTextRect = mrTextGo.GetComponent<RectTransform>();
         mrTextRect.anchorMin = new Vector2(0f, 1f); mrTextRect.anchorMax = new Vector2(1f, 1f);
         mrTextRect.pivot = new Vector2(0.5f, 1f);
-        mrTextRect.sizeDelta = new Vector2(-60f, 90f);
-        mrTextRect.anchoredPosition = new Vector2(0f, -(ListTop + 10f));
+        mrTextRect.sizeDelta = new Vector2(-60f, 117f);
+        mrTextRect.anchoredPosition = new Vector2(0f, -(ListTop + DescGap));
     }
 
     // 현재 steps 수만큼 목록 행을 다시 만든다.
@@ -368,30 +368,30 @@ public class WorkGuidePanel : MonoBehaviour
             var iconGo = new GameObject("Icon");
             iconGo.transform.SetParent(rowGoI.transform, false);
             var icon = iconGo.AddComponent<Text>();
-            icon.font = font; icon.fontSize = 24;
+            icon.font = font; icon.fontSize = 31;
             icon.alignment = TextAnchor.MiddleCenter;
             icon.raycastTarget = false;
             var iconRect = icon.rectTransform;
             iconRect.anchorMin = new Vector2(0f, 0f); iconRect.anchorMax = new Vector2(0f, 1f);
             iconRect.pivot = new Vector2(0f, 0.5f);
-            iconRect.sizeDelta = new Vector2(50f, 0f);
+            iconRect.sizeDelta = new Vector2(65f, 0f);
             iconRect.anchoredPosition = new Vector2(10f, 0f);
             rowIcons[i] = icon;
 
             var labelGo = new GameObject("Label");
             labelGo.transform.SetParent(rowGoI.transform, false);
             var label = labelGo.AddComponent<Text>();
-            label.font = font; label.fontSize = 22;
+            label.font = font; label.fontSize = 29;
             label.text = steps[i].ar;
             label.alignment = TextAnchor.MiddleLeft;
             label.raycastTarget = false;
             var labelRect = label.rectTransform;
             labelRect.anchorMin = new Vector2(0f, 0f); labelRect.anchorMax = new Vector2(1f, 1f);
-            labelRect.offsetMin = new Vector2(66f, 0f); labelRect.offsetMax = new Vector2(-10f, 0f);
+            labelRect.offsetMin = new Vector2(86f, 0f); labelRect.offsetMax = new Vector2(-10f, 0f);
             rowLabels[i] = label;
         }
 
-        mrTextRect.anchoredPosition = new Vector2(0f, -(ListTop + listHeight + 10f));
+        mrTextRect.anchoredPosition = new Vector2(0f, -(ListTop + listHeight + DescGap));
     }
 
     // ── 서버 응답 DTO ──

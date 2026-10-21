@@ -17,9 +17,13 @@ public static class MrArrivalState
         HasDockPose = true; DockPos = pos; DockRot = rot;
     }
 
+    // 2026-10-21: 도착한 설비 - MrCallDockPanel이 공정정보 패널을 화상통화 패널 왼쪽에 배치할 때 쓴다.
+    public static EquipmentMarker Marker;
+
     public static void RestoreArrival()
     {
         HasDockPose = false; // 통화 끝 - 다음 도착 때 다시 세팅됨
+        Marker = null;
         var cb = OnRestore;
         OnRestore = null; // 1회성 - 다음 수락 때 다시 등록됨
         cb?.Invoke();
