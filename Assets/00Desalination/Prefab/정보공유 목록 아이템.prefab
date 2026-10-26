@@ -84,7 +84,6 @@ GameObject:
   - component: {fileID: 4411982882374533577}
   - component: {fileID: 8921062675879116761}
   - component: {fileID: 1121100523731971405}
-  - component: {fileID: 2165232221621370068}
   m_Layer: 5
   m_Name: "\uC815\uBCF4\uACF5\uC720 \uBAA9\uB85D \uC544\uC774\uD15C"
   m_TagString: Untagged
@@ -178,28 +177,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 1
   m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
---- !u!114 &2165232221621370068
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2969682220727537904}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f693826fe6f74b4daf6c3dd0a649033, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InspectionItemUI
-  equipmentNameText: {fileID: 584994903349630990}
-  locationText: {fileID: 0}
-  statusText: {fileID: 0}
-  alarmSeverityText: {fileID: 0}
-  scheduledAtText: {fileID: 0}
-  actionButton: {fileID: 1181810458484699158}
-  colorCritical: {r: 0.97, g: 0.32, b: 0.29, a: 1}
-  colorWarning: {r: 0.94, g: 0.71, b: 0.16, a: 1}
-  colorNormal: {r: 0.25, g: 0.73, b: 0.31, a: 1}
-  colorGray: {r: 0.54, g: 0.58, b: 0.62, a: 1}
 --- !u!1 &5575906267636885196
 GameObject:
   m_ObjectHideFlags: 0
