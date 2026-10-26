@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit.UI;
 
@@ -140,52 +139,18 @@ public class WorkGuidePanel : MonoBehaviour
     IEnumerator LoadStepsAndShow()
     {
         string manualId = null;
-        string manualTitle = null;
 
         string callId = VideoCallSignalingMR.CurrentSupportCallId;
         if (!string.IsNullOrEmpty(callId))
-        {
-            string url = ServerConfig.BaseUrl + "/api/support-calls/" + callId;
-            using var req = UnityWebRequest.Get(url);
-            req.timeout = ServerConfig.RequestTimeout;
-            yield return req.SendWebRequest();
-            if (req.result == UnityWebRequest.Result.Success)
-            {
-                var res = JsonUtility.FromJson<SupportCallResponse>(req.downloadHandler.text);
-                if (res != null && res.success && res.data != null)
-                {
-                    manualId    = res.data.manual_id;
-                    manualTitle = res.data.manual_title;
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[WorkGuide] support-call 상세 로드 실패: " + req.error);
-            }
-        }
+            yield return SupportCallApi.Get(callId, d => manualId = d?.manual_id,
+                e => Debug.LogWarning("[WorkGuide] support-call 상세 로드 실패: " + e));
 
         steps.Clear();
 
         if (!string.IsNullOrEmpty(manualId))
-        {
-            string url = ServerConfig.BaseUrl + "/api/manuals/" + manualId + "/steps";
-            using var req = UnityWebRequest.Get(url);
-            req.timeout = ServerConfig.RequestTimeout;
-            yield return req.SendWebRequest();
-            if (req.result == UnityWebRequest.Result.Success)
-            {
-                var res = JsonUtility.FromJson<StepListResponse>(req.downloadHandler.text);
-                if (res != null && res.success && res.data != null)
-                {
-                    foreach (var s in res.data)
-                        steps.Add(new Step(s.title, s.description));
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[WorkGuide] 스텝 로드 실패: " + req.error);
-            }
-        }
+            yield return ManualApi.Steps(manualId,
+                list => { foreach (var s in list) steps.Add(new Step(s.title, s.description)); },
+                e => Debug.LogWarning("[WorkGuide] 스텝 로드 실패: " + e));
 
         if (steps.Count == 0)
         {
@@ -395,14 +360,4 @@ public class WorkGuidePanel : MonoBehaviour
 
         mrTextRect.anchoredPosition = new Vector2(0f, -(ListTop + listHeight + DescGap));
     }
-
-    // ── 서버 응답 DTO ──
-    [System.Serializable]
-    class SupportCallResponse { public bool success; public SupportCallData data; }
-    [System.Serializable]
-    class SupportCallData { public string manual_id; public string manual_title; public string work_type; }
-    [System.Serializable]
-    class StepListResponse { public bool success; public StepDto[] data; }
-    [System.Serializable]
-    class StepDto { public int step_no; public string title; public string description; public string model_url; }
 }

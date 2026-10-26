@@ -8,7 +8,6 @@ public class AudioRecorder : MonoBehaviour
 {
     public static AudioRecorder Instance;
 
-    public string serverUrl => ServerConfig.BaseUrl + "/api/ai/voice-summary";
 
     [Header("녹음 설정")]
     public int sampleRate = 16000;   // Whisper 권장 샘플레이트
@@ -66,18 +65,8 @@ public class AudioRecorder : MonoBehaviour
 
         byte[] wavData = ConvertToWav(samples, _recording.channels, sampleRate);
 
-        var form = new WWWForm();
-        form.AddBinaryData("audio", wavData, "audio.wav", "audio/wav");
-        if (!string.IsNullOrEmpty(maintenanceId))
-            form.AddField("maintenance_id", maintenanceId);
-
-        using var req = UnityWebRequest.Post(serverUrl, form);
-        req.timeout = ServerConfig.LongRequestTimeout;
-        yield return req.SendWebRequest();
-
-        if (req.result == UnityWebRequest.Result.Success)
+        yield return AiApi.VoiceSummary(wavData, maintenanceId, response =>
         {
-            var response = JsonUtility.FromJson<SummaryResponse>(req.downloadHandler.text);
             if (response.success)
             {
                 Debug.Log("[AudioRecorder] 요약 완료");
@@ -88,12 +77,11 @@ public class AudioRecorder : MonoBehaviour
                 Debug.LogError("[AudioRecorder] 요약 실패: " + response.message);
                 SummaryDisplay.Instance?.ShowError("요약에 실패했습니다.");
             }
-        }
-        else
+        }, error =>
         {
-            Debug.LogError("[AudioRecorder] 전송 실패: " + req.error);
+            Debug.LogError("[AudioRecorder] 전송 실패: " + error);
             SummaryDisplay.Instance?.ShowError("서버 연결에 실패했습니다.");
-        }
+        });
     }
 
     // float[] → WAV 변환

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using UnityEngine.Networking;
 using TMPro;
 
 // 화상통화 > 지시하기 그리기 창
@@ -36,8 +35,6 @@ public class InstructionDrawing : MonoBehaviour,
     [Header("스티커")]
     public Sprite checkSprite;           // 체크 스티커 스프라이트
     public GameObject stickerPrefab;        // 스티커 프리팹 (Image)
-
-    public string serverUrl => ServerConfig.BaseUrl + "/api/files/instruction";
 
     [Header("알림")]
     public GameObject alertPanel;       // 알림 패널
@@ -331,24 +328,16 @@ public class InstructionDrawing : MonoBehaviour,
         byte[] pngData = final.EncodeToPNG();
         Destroy(final);
 
-        var form = new WWWForm();
-        form.AddBinaryData("file", pngData, $"instruction_{System.DateTime.Now:yyyyMMdd_HHmmss}.png", "image/png");
-
-        using var req = UnityWebRequest.Post(serverUrl, form);
-        req.timeout = ServerConfig.LongRequestTimeout;
-        yield return req.SendWebRequest();
-
-        if (req.result == UnityWebRequest.Result.Success)
+        yield return FileApi.UploadInstruction(pngData, $"instruction_{System.DateTime.Now:yyyyMMdd_HHmmss}.png", () =>
         {
             Debug.Log("[InstructionDrawing] 전송 완료");
             ShowAlert("지시하기 전송이 완료되었습니다."); // 파일공유 토스트("정보공유가 완료되었습니다.")와 같은 형식
             StartCoroutine(CloseAfterDelay(3f));
-        }
-        else
+        }, error =>
         {
-            Debug.LogError("[InstructionDrawing] 전송 실패: " + req.error);
+            Debug.LogError("[InstructionDrawing] 전송 실패: " + error);
             ShowAlert("지시하기 전송에 실패했습니다.");
-        }
+        });
     }
 
     // 알림 표시 (3초 후 자동 닫힘)

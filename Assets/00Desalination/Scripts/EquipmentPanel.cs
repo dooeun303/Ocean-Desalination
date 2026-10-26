@@ -1,14 +1,9 @@
 ﻿using System.Collections;
 using UnityEngine;
-using UnityEngine.Networking;
 using TMPro;
-using Newtonsoft.Json;
 
 public class EquipmentPanel : MonoBehaviour
 {
-    public string serverUrl => ServerConfig.BaseUrl + "/api/equipment";
-    public string sensorServerUrl => ServerConfig.BaseUrl + "/api/equipment";
-
     // 장비 정보 텍스트
     private TextMeshProUGUI nameText;
     private TextMeshProUGUI idText;
@@ -96,25 +91,11 @@ public class EquipmentPanel : MonoBehaviour
     // ─────────────────────────────────────────
     private IEnumerator FetchEquipment(string uuid)
     {
-        string url = $"{serverUrl}/{uuid}";
-        using var req = UnityWebRequest.Get(url);
-        req.timeout = ServerConfig.RequestTimeout;
-        yield return req.SendWebRequest();
+        EquipmentData d = null;
+        yield return EquipmentApi.Get(uuid, data => d = data,
+            e => Debug.LogError($"[EquipmentPanel] 장비 조회 실패: {e}"));
+        if (d == null) yield break;
 
-        if (req.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError($"[EquipmentPanel] 요청 실패: {req.error}");
-            yield break;
-        }
-
-        var response = JsonConvert.DeserializeObject<EquipmentResponse>(req.downloadHandler.text);
-        if (!response.success)
-        {
-            Debug.LogWarning($"[EquipmentPanel] success: false — {response.message}");
-            yield break;
-        }
-
-        var d = response.data;
         if (nameText) nameText.text = d.name;
         if (idText) idText.text = d.id;
         if (typeText) typeText.text = TypeKo(d.equipment_type);
@@ -130,25 +111,12 @@ public class EquipmentPanel : MonoBehaviour
     // ─────────────────────────────────────────
     private IEnumerator FetchSensors(string uuid)
     {
-        string url = $"{sensorServerUrl}/{uuid}/sensors";
-        using var req = UnityWebRequest.Get(url);
-        req.timeout = ServerConfig.RequestTimeout;
-        yield return req.SendWebRequest();
+        SensorItem[] sensors = null;
+        yield return EquipmentApi.Sensors(uuid, data => sensors = data,
+            e => Debug.LogWarning($"[EquipmentPanel] 센서 조회 실패: {e}"));
+        if (sensors == null) yield break;
 
-        if (req.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError($"[EquipmentPanel] 센서 요청 실패: {req.error}");
-            yield break;
-        }
-
-        var response = JsonConvert.DeserializeObject<SensorListResponse>(req.downloadHandler.text);
-        if (!response.success || response.data == null)
-        {
-            Debug.LogWarning("[EquipmentPanel] 센서 데이터 없음");
-            yield break;
-        }
-
-        foreach (var sensor in response.data)
+        foreach (var sensor in sensors)
         {
             // AR QR 패널과 같은 자릿수(온도 F1 / 압력·진동 F2 / RPM 정수) - 같은 값이 다르게 보이지 않게.
             string fmt = sensor.sensor_type switch

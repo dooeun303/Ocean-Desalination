@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.UI;
@@ -39,10 +38,8 @@ public class MrCallDockPanel : MonoBehaviour
     // 유닛)가 커서 얼굴 바로 앞을 가릴 만큼 크게 보였다("너무 가까워" 실기 확인). 버튼들은 크기가
     // 작아 그 거리에서도 괜찮았지만, 도크는 더 멀리 둬야 같은 체감 크기가 된다.
     const float DockDepth = 2.2f;
-    static readonly string SupportCallUrl = ServerConfig.BaseUrl + "/api/support-calls/";
-    // InmoCallManager.cs(AR)/JoinChannelVideoToken.cs(MR 원본 로직)와 동일한 App ID/토큰 서버.
+    // InmoCallManager.cs(AR)/JoinChannelVideoToken.cs(MR 원본 로직)와 동일한 App ID(토큰은 RtcApi).
     const string AgoraAppID = "5b6baf59793d494f95554d1246847731";
-    static readonly string AgoraTokenServerUrl = ServerConfig.BaseUrl;
 
     GameObject canvasGo;
     RectTransform videoContainer;
@@ -299,21 +296,9 @@ public class MrCallDockPanel : MonoBehaviour
             }
             if (!IsInCall || channel != channelName) yield break; // 기다리는 사이 통화가 이미 끝났거나 바뀜
 
-            using var req = UnityWebRequest.Get($"{AgoraTokenServerUrl}/api/rtc/{channel}/0");
-            req.timeout = ServerConfig.RequestTimeout;
-            yield return req.SendWebRequest();
-
-            if (req.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogWarning($"[MrCallDockPanel][Agora] 토큰 발급 실패 ({attempt}/{TokenAttempts}): {req.error}");
-                continue;
-            }
-            token = JsonUtility.FromJson<AgoraTokenResponse>(req.downloadHandler.text)?.token;
-            if (string.IsNullOrEmpty(token))
-            {
-                Debug.LogWarning($"[MrCallDockPanel][Agora] 토큰 응답이 비어있음 ({attempt}/{TokenAttempts})");
-                token = null;
-            }
+            int tries = attempt;
+            yield return RtcApi.Token(channel, t => token = t,
+                e => Debug.LogWarning($"[MrCallDockPanel][Agora] 토큰 발급 실패 ({tries}/{TokenAttempts}): {e}"));
         }
 
         // 통화가 끝나도 channelName은 그대로 남아서, 이름 비교만으로는 "끝난 통화"를 못 걸렀다 - IsInCall도 본다.
@@ -324,7 +309,6 @@ public class MrCallDockPanel : MonoBehaviour
             yield break;
         }
         SetConnectingText(DefaultConnectingText);
-        var tokenResponse = new AgoraTokenResponse { token = token };
 
         EnsureAgoraEngine();
         _rtcEngine.SetClientRole(CLIENT_ROLE_TYPE.CLIENT_ROLE_BROADCASTER);
@@ -338,7 +322,7 @@ public class MrCallDockPanel : MonoBehaviour
         options.autoSubscribeVideo.SetValue(true);        // AR 영상은 구독
         options.autoSubscribeAudio.SetValue(true);
 
-        _rtcEngine.JoinChannel(tokenResponse.token, channel, 0, options);
+        _rtcEngine.JoinChannel(token, channel, 0, options);
         _agoraInCall = true;
         Debug.Log("[MrCallDockPanel][Agora] 채널 join: " + channel);
         if (recorder == null) yield break; // 녹화 꺼짐
@@ -348,15 +332,8 @@ public class MrCallDockPanel : MonoBehaviour
 
         // MR 시점 화면 녹화용 전용 채널({채널}_mrrec) 토큰 - 받지 못하면 녹화만 건너뛰고 통화는 그대로.
         string recToken = null;
-        using (var recReq = UnityWebRequest.Get($"{AgoraTokenServerUrl}/api/rtc/{channel}_mrrec/0"))
-        {
-            recReq.timeout = ServerConfig.RequestTimeout;
-            yield return recReq.SendWebRequest();
-            if (recReq.result == UnityWebRequest.Result.Success)
-                recToken = JsonUtility.FromJson<AgoraTokenResponse>(recReq.downloadHandler.text)?.token;
-            else
-                Debug.LogWarning("[MrCallDockPanel][Agora] 녹화 채널 토큰 발급 실패: " + recReq.error);
-        }
+        yield return RtcApi.Token(channel + "_mrrec", t => recToken = t,
+            e => Debug.LogWarning("[MrCallDockPanel][Agora] 녹화 채널 토큰 발급 실패: " + e));
         if (channel != channelName || !_agoraInCall || recToken == null) yield break;
         recorder.StartViewCapture(recToken);
     }
@@ -406,9 +383,6 @@ public class MrCallDockPanel : MonoBehaviour
         }
     }
 
-    [System.Serializable]
-    class AgoraTokenResponse { public string token; }
-
     // JoinChannelVideoToken.UserEventHandler와 동일한 목적 - 원격(AR) 유저가 들어오면 영상 뷰를
     // 만들고, 나가면 지운다. MakeVideoView/DestroyVideoView는 JoinChannelVideoToken.cs의 static
     // 유틸을 그대로 재사용한다(그 클래스의 인스턴스/GameObject와는 무관).
@@ -457,12 +431,8 @@ public class MrCallDockPanel : MonoBehaviour
     IEnumerator EndSupportCallOnServer(string callId)
     {
         // by=MR - 서버가 AR에 call_end를 보낸다(EndCallAsInitiator의 WS 전송이 끊겨 있어도 AR이 알 수 있게).
-        using var req = new UnityWebRequest(SupportCallUrl + callId + "/end?by=MR", "PATCH");
-        req.timeout = ServerConfig.RequestTimeout;
-        req.downloadHandler = new DownloadHandlerBuffer();
-        yield return req.SendWebRequest();
-        if (req.result != UnityWebRequest.Result.Success)
-            Debug.LogWarning("[MrCallDockPanel] 통화 종료 처리 실패: " + req.error);
+        yield return SupportCallApi.End(callId, "MR", null,
+            e => Debug.LogWarning("[MrCallDockPanel] 통화 종료 처리 실패: " + e));
     }
 
     void Start()

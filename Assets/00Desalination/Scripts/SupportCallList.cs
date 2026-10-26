@@ -2,10 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 using TMPro;
 using UnityEngine.UI;
-using Newtonsoft.Json;
 
 // 지원 요청 목록(MaintenanceList.cs와 동일한 패턴) - AR이 화상통화를 걸어오면(POST
 // /api/support-calls) status='ringing'으로 DB에 쌓이는데, MR이 항상 헤드셋을 쓰고 있는 게
@@ -13,7 +11,6 @@ using Newtonsoft.Json;
 // VideoCallSignalingMR.RaiseCallAccepted()로 기존 MrCallDockPanel의 화상통화 흐름을 그대로 태운다.
 public class SupportCallList : MonoBehaviour
 {
-    public string serverUrl => ServerConfig.BaseUrl + "/api/support-calls";
 
     [Header("아이템 프리팹 & 컨테이너")]
     public GameObject itemPrefab;
@@ -64,18 +61,12 @@ public class SupportCallList : MonoBehaviour
 
     IEnumerator FetchList()
     {
-        using var req = UnityWebRequest.Get(serverUrl);
-        req.timeout = ServerConfig.RequestTimeout;
-        yield return req.SendWebRequest();
+        List<SupportCallData> items = null;
+        yield return SupportCallApi.List(null, list => items = list,
+            e => Debug.LogError("[SupportCallList] 목록 조회 실패: " + e));
+        if (items == null) yield break;
 
-        if (req.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError("[SupportCallList] 목록 조회 실패: " + req.error);
-            yield break;
-        }
-
-        var response = JsonConvert.DeserializeObject<SupportCallListResponse>(req.downloadHandler.text);
-        _allItems = (response != null && response.success && response.data != null) ? response.data : new List<SupportCallData>();
+        _allItems = items;
         _currentPage = 0;
         RenderPage();
     }
@@ -136,18 +127,13 @@ public class SupportCallList : MonoBehaviour
 
     IEnumerator AcceptRequest(SupportCallData data)
     {
-        var body = new AcceptBody { receiver_id = "MR" };
-        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(body));
-        using var req = new UnityWebRequest(serverUrl + "/" + data.id + "/accept", "PATCH");
-        req.timeout = ServerConfig.RequestTimeout;
-        req.uploadHandler = new UploadHandlerRaw(bytes);
-        req.downloadHandler = new DownloadHandlerBuffer();
-        req.SetRequestHeader("Content-Type", "application/json");
-        yield return req.SendWebRequest();
+        string error = null;
+        bool accepted = false;
+        yield return SupportCallApi.Accept(data.id, "MR", () => accepted = true, e => error = e);
 
-        if (req.result != UnityWebRequest.Result.Success)
+        if (!accepted)
         {
-            Debug.LogWarning("[SupportCallList] 수락 실패: " + req.error);
+            Debug.LogWarning("[SupportCallList] 수락 실패: " + error);
             yield return FetchList(); // 이미 다른 곳에서 처리됐을 수 있으니 최신 상태로 다시 그림
             yield break;
         }
@@ -298,19 +284,9 @@ public class SupportCallList : MonoBehaviour
 
     IEnumerator RejectRequest(SupportCallData data)
     {
-        using var req = new UnityWebRequest(serverUrl + "/" + data.id + "/reject", "PATCH");
-        req.timeout = ServerConfig.RequestTimeout;
-        req.downloadHandler = new DownloadHandlerBuffer();
-        yield return req.SendWebRequest();
-
-        if (req.result != UnityWebRequest.Result.Success)
-            Debug.LogWarning("[SupportCallList] 거절 실패: " + req.error);
-
+        yield return SupportCallApi.Reject(data.id, null, e => Debug.LogWarning("[SupportCallList] 거절 실패: " + e));
         yield return FetchList();
     }
-
-    [Serializable]
-    class AcceptBody { public string receiver_id; }
 }
 
 [Serializable]
@@ -331,11 +307,6 @@ public class SupportCallData
     public string equipment_name;
     public string maintenance_description;
     public string work_type;
-}
-
-[Serializable]
-public class SupportCallListResponse
-{
-    public bool success;
-    public List<SupportCallData> data;
+    public string manual_id;    // 작업가이드(WorkGuidePanel)가 이 매뉴얼의 단계를 불러온다
+    public string manual_title;
 }

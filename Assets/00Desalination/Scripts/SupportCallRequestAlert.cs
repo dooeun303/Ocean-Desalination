@@ -1,7 +1,5 @@
 using System.Collections;
-using Newtonsoft.Json;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
 
 // 2026-10-20: "AR에서 MR로 원격지원 요청이 오면 MR에 알림만 띄우고 3초 후 사라지게. 사용자는 그걸 보고
@@ -16,7 +14,6 @@ public class SupportCallRequestAlert : MonoBehaviour
     const float ShowSeconds = 3f;
     const float FadeSeconds = 0.25f;
 
-    static string SupportCallUrl => ServerConfig.BaseUrl + "/api/support-calls/";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
@@ -71,17 +68,8 @@ public class SupportCallRequestAlert : MonoBehaviour
     IEnumerator LoadAndShow(string callId)
     {
         SupportCallData data = null;
-        using (var req = UnityWebRequest.Get(SupportCallUrl + callId))
-        {
-            req.timeout = ServerConfig.RequestTimeout;
-            yield return req.SendWebRequest();
-            if (req.result == UnityWebRequest.Result.Success)
-            {
-                try { data = JsonConvert.DeserializeObject<SupportCallDetailResponse>(req.downloadHandler.text)?.data; }
-                catch (System.Exception e) { Debug.LogWarning("[SupportCallAlert] 상세 파싱 실패: " + e.Message); }
-            }
-            else Debug.LogWarning("[SupportCallAlert] 요청 상세 조회 실패: " + req.error);
-        }
+        yield return SupportCallApi.Get(callId, d => data = d,
+            e => Debug.LogWarning("[SupportCallAlert] 요청 상세 조회 실패: " + e));
         // 상세를 못 받아도 알림 자체는 띄운다.
         Show(data ?? new SupportCallData { id = callId });
     }
@@ -261,6 +249,4 @@ public class SupportCallRequestAlert : MonoBehaviour
         clip.SetData(data, 0);
         return clip;
     }
-
-    class SupportCallDetailResponse { public bool success; public SupportCallData data; }
 }

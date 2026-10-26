@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -85,7 +86,7 @@ public static class MrTestBridge
     {
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
         string json = http.GetStringAsync(ServerConfig.BaseUrl + "/api/support-calls?status=ringing").Result;
-        var list = JsonConvert.DeserializeObject<SupportCallListResponse>(json)?.data;
+        var list = JsonConvert.DeserializeObject<ApiResponse<List<SupportCallData>>>(json)?.data;
         if (list == null || list.Count == 0) throw new Exception("대기 중인 지원요청이 없음");
         var pick = id == null ? list.First() : list.FirstOrDefault(d => d.id == id);
         if (pick == null) throw new Exception("해당 id의 대기 요청 없음: " + id);

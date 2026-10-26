@@ -7,8 +7,6 @@ using TMPro;
 
 public class GetAllAlarm : MonoBehaviour
 {
-    public string serverUrl => ServerConfig.BaseUrl + "/api/alarms";
-
     [Header("탭")]
     public bool activeOnly = false;
 
@@ -43,36 +41,14 @@ public class GetAllAlarm : MonoBehaviour
     // 서버에서 알람 목록 조회
     public IEnumerator FetchAlarms()
     {
-        // 서버 url
-        string url = activeOnly ? serverUrl + "?active=true" : serverUrl;
+        List<AlarmData> alarms = null;
+        yield return AlarmApi.List(activeOnly, list => alarms = list,
+            e => Debug.LogError("[GetAllAlarm] 요청 실패: " + e));
+        if (alarms == null) yield break;
 
-        // 서버 url 로 get 요청
-        using (UnityWebRequest req = UnityWebRequest.Get(url))
-        {
-            req.timeout = ServerConfig.RequestTimeout;
-            // 요청을 서버로 보냄
-            yield return req.SendWebRequest();
-
-            if (req.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError("[GetAllAlarm] 요청 실패: " + req.error);
-                yield break;
-            }
-
-            // get요청 해서 받아온 모든 알람 데이터를 JSON -> AlarmListResponse 로 변환함
-            AlarmListResponse response = JsonUtility.FromJson<AlarmListResponse>(req.downloadHandler.text);
-
-            if (response == null || !response.success)
-            {
-                Debug.LogError("[GetAllAlarm] 응답 파싱 실패");
-                yield break;
-            }
-
-            // alarms 는 response의 data
-            _alarms = response.data;
-            _currentPage = 0; // 현재 페이지 0으로 설정하고 페이지 렌더링하기
-            RenderPage();
-        }
+        _alarms = alarms;
+        _currentPage = 0; // 현재 페이지 0으로 설정하고 페이지 렌더링하기
+        RenderPage();
     }
 
 

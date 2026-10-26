@@ -1,14 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 
 // 정보공유 팝업 관리 스크립트
 // 서버에서 파일 목록 받아서 아이템 생성
 public class InfoShareManager : MonoBehaviour
 {
-    public string serverUrl => ServerConfig.BaseUrl + "/api/files";
-
     [Header("UI 연결")]
     public Transform itemContainer;   // 아이템 컨테이너
     public GameObject itemPrefab;      // 정보공유아이템 프리팹
@@ -38,30 +35,17 @@ public class InfoShareManager : MonoBehaviour
     // ─────────────────────────────────────────
     private IEnumerator LoadFiles(string type = "general")
     {
-        string url = string.IsNullOrEmpty(type) ? serverUrl : $"{serverUrl}?type={type}";
-        using var req = UnityWebRequest.Get(url);
-        req.timeout = ServerConfig.LongRequestTimeout;
-        yield return req.SendWebRequest();
-
-        if (req.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError("[InfoShareManager] 파일 목록 로드 실패: " + req.error);
-            yield break;
-        }
-
-        var response = JsonUtility.FromJson<FileListResponse>(req.downloadHandler.text);
-        if (!response.success || response.data == null)
-        {
-            Debug.LogWarning("[InfoShareManager] 파일 데이터 없음");
-            yield break;
-        }
+        FileData[] files = null;
+        yield return FileApi.List(type, data => files = data,
+            e => Debug.LogError("[InfoShareManager] 파일 목록 로드 실패: " + e));
+        if (files == null) yield break;
 
         // 기존 아이템 제거
         foreach (Transform child in itemContainer)
             Destroy(child.gameObject);
 
         // 아이템 생성
-        foreach (var file in response.data)
+        foreach (var file in files)
         {
             var go = Instantiate(itemPrefab, itemContainer);
             var icon = go.GetComponent<FileIconItem>();
@@ -70,19 +54,13 @@ public class InfoShareManager : MonoBehaviour
                 icon.rootCanvas = rootCanvas;
                 icon.SetData(file.id, file.name, file.url);
 
-                // 이미지가 있으면 다운로드해서 표시
+                // 이미지가 있으면 다운로드해서 표시(상대경로면 ApiClient가 서버 주소를 붙인다)
                 if (!string.IsNullOrEmpty(file.url))
-                {
-                    // 상대경로면 서버 주소 붙이기
-                    string imageUrl = file.url.StartsWith("http")
-                        ? file.url
-                        : serverUrl.Replace("/api/files", "") + file.url;
-                    StartCoroutine(LoadImage(imageUrl, icon));
-                }
+                    StartCoroutine(LoadImage(file.url, icon));
             }
         }
 
-        Debug.Log($"[InfoShareManager] 파일 {response.data.Length}개 로드 완료");
+        Debug.Log($"[InfoShareManager] 파일 {files.Length}개 로드 완료");
     }
 
     // ─────────────────────────────────────────
@@ -90,17 +68,11 @@ public class InfoShareManager : MonoBehaviour
     // ─────────────────────────────────────────
     private IEnumerator LoadImage(string url, FileIconItem icon)
     {
-        using var req = UnityWebRequestTexture.GetTexture(url);
-        req.timeout = ServerConfig.LongRequestTimeout;
-        yield return req.SendWebRequest();
+        Texture2D texture = null;
+        yield return ApiClient.GetTexture(url, t => texture = t,
+            e => Debug.LogWarning("[InfoShareManager] 이미지 로드 실패: " + e));
+        if (texture == null) yield break;
 
-        if (req.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogWarning("[InfoShareManager] 이미지 로드 실패: " + req.error);
-            yield break;
-        }
-
-        var texture = DownloadHandlerTexture.GetContent(req);
         var sprite = Sprite.Create(
             texture,
             new Rect(0, 0, texture.width, texture.height),

@@ -19,7 +19,6 @@ public class AuthApi : MonoBehaviour
 {
     public static AuthApi Instance { get; private set; }
 
-    private string baseUrl => ServerConfig.BaseUrl;
     [SerializeField] private float timeoutSeconds = 10f;
 
     // ---- 서버 응답/요청 DTO (JsonUtility 용) ----
@@ -48,47 +47,22 @@ public class AuthApi : MonoBehaviour
         StartCoroutine(CoQrLogin(qr, onSuccess, onError));
     }
 
+    // 401 등 서버가 이유를 준 실패는 그 메시지(예: "등록되지 않은 사용자입니다.")가 onError로 간다(ApiClient).
     private IEnumerator CoQrLogin(string qr, Action<UserDto> onSuccess, Action<string> onError)
     {
-        string url = $"{baseUrl}/api/auth/qr-login";
-        string json = JsonUtility.ToJson(new QrLoginBody { qr = qr });
-
-        using UnityWebRequest request = new UnityWebRequest(url, "POST");
-        request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json));
-        request.downloadHandler = new DownloadHandlerBuffer();
-        request.timeout = (int)timeoutSeconds;
-        request.SetRequestHeader("Content-Type", "application/json");
-
-        yield return request.SendWebRequest(); // 요청 대기
-
-        // 네트워크 자체 실패 (401 등 서버가 응답한 실패는 아래에서 메시지로 처리)
-        if (request.result != UnityWebRequest.Result.Success && request.downloadHandler.text.Length == 0)
+        yield return ApiClient.Send<QrLoginResponse>("POST", "/api/auth/qr-login", new QrLoginBody { qr = qr }, response =>
         {
-            onError?.Invoke($"요청 실패 ({request.responseCode}): {request.error}");
-            yield break;
-        }
-
-        QrLoginResponse response;
-        try
-        {
-            response = JsonUtility.FromJson<QrLoginResponse>(request.downloadHandler.text);
-        }
-        catch (Exception e)
-        {
-            onError?.Invoke($"응답 파싱 실패: {e.Message}");
-            yield break;
-        }
-
-        if (response != null && response.success && response.data != null)
-        {
-            var user = response.data.user;
-            AuthSession.Set(response.data.token, user?.user_id, user?.user_nm, user?.company);
-            onSuccess?.Invoke(user);
-        }
-        else
-        {
-            onError?.Invoke(response?.message ?? "로그인에 실패했습니다.");
-        }
+            if (response.success && response.data != null)
+            {
+                var user = response.data.user;
+                AuthSession.Set(response.data.token, user?.user_id, user?.user_nm, user?.company);
+                onSuccess?.Invoke(user);
+            }
+            else
+            {
+                onError?.Invoke(response.message ?? "로그인에 실패했습니다.");
+            }
+        }, onError, (int)timeoutSeconds);
     }
 
     /// <summary>저장된 토큰이 아직 유효한지 서버에 확인 (자동 로그인 판단용).</summary>
@@ -103,29 +77,12 @@ public class AuthApi : MonoBehaviour
         StartCoroutine(CoVerify(done));
     }
 
+    // 토큰은 ApiClient가 Authorization 헤더로 붙인다. 통신 실패도 "유효하지 않음"으로 보고 세션을 지운다(기존 동작).
     private IEnumerator CoVerify(Action<bool> done)
     {
-        string url = $"{baseUrl}/api/auth/me";
-
-        using UnityWebRequest request = UnityWebRequest.Get(url);
-        request.timeout = (int)timeoutSeconds;
-        request.SetRequestHeader("Authorization", AuthSession.AuthHeader);
-
-        yield return request.SendWebRequest();
-
-        bool valid = request.result == UnityWebRequest.Result.Success;
-        if (valid)
-        {
-            try
-            {
-                var res = JsonUtility.FromJson<MeResponse>(request.downloadHandler.text);
-                valid = res != null && res.success;
-            }
-            catch
-            {
-                valid = false;
-            }
-        }
+        bool valid = false;
+        yield return ApiClient.Get<MeResponse>("/api/auth/me", res => valid = res.success, _ => valid = false,
+            (int)timeoutSeconds);
 
         if (!valid)
         {
@@ -143,18 +100,9 @@ public class AuthApi : MonoBehaviour
 
     private IEnumerator CoLogout(Action done)
     {
+        // 서버 기록(logout_dt)만 남기는 요청이라 실패해도 로컬 세션은 지운다.
         if (AuthSession.IsLoggedIn)
-        {
-            string url = $"{baseUrl}/api/auth/logout";
-
-            using UnityWebRequest request = new UnityWebRequest(url, "POST");
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.timeout = (int)timeoutSeconds;
-            request.SetRequestHeader("Content-Type", "application/json");
-            request.SetRequestHeader("Authorization", AuthSession.AuthHeader);
-
-            yield return request.SendWebRequest();
-        }
+            yield return ApiClient.Send("POST", "/api/auth/logout", null, null, null, (int)timeoutSeconds);
 
         AuthSession.Clear();
         done?.Invoke();

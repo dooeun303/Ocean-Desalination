@@ -30,7 +30,6 @@ public class MrCallRecorder : MonoBehaviour
     const int ViewHeight = 720;
     const float ViewFps = 15f;
     // POST /api/support-calls/{id}/recordings?source=&filename=[&part=audio | &offset_ms=]
-    static readonly string SupportCallUrl = ServerConfig.BaseUrl + "/api/support-calls/";
 
     public static string RecordingDir => Path.Combine(Application.persistentDataPath, "SupportRecordings");
 
@@ -271,7 +270,7 @@ public class MrCallRecorder : MonoBehaviour
     {
         yield return new WaitForSecondsRealtime(2f); // Stop 후 파일 마무리(mp4 moov 등) 기록이 끝날 시간
 
-        string baseUrl = $"{SupportCallUrl}{callId}/recordings?source={Source}";
+        string baseUrl = $"/api/support-calls/{callId}/recordings?source={Source}"; // ApiClient가 서버 주소를 붙인다
         if (IsNonEmpty(audioPath))
             yield return Upload(baseUrl + "&part=audio", audioPath, "audio/aac");
         if (IsNonEmpty(videoPath))
@@ -288,16 +287,10 @@ public class MrCallRecorder : MonoBehaviour
     static IEnumerator Upload(string url, string path, string contentType)
     {
         url += "&filename=" + UnityWebRequest.EscapeURL(Path.GetFileName(path));
-        using var req = new UnityWebRequest(url, "POST");
-        req.uploadHandler = new UploadHandlerFile(path); // 수백 MB도 메모리에 안 올리고 스트리밍
-        req.downloadHandler = new DownloadHandlerBuffer();
-        req.SetRequestHeader("Content-Type", contentType);
-        yield return req.SendWebRequest();
-
-        if (req.result != UnityWebRequest.Result.Success)
-            Debug.LogWarning($"[MrCallRecorder] 업로드 실패({req.responseCode}): {req.error} - 기기에 남아있음: {path}");
-        else
-            Debug.Log($"[MrCallRecorder] 업로드 완료: {path}");
+        // 수백 MB도 메모리에 안 올리고 파일에서 바로 스트리밍한다.
+        yield return ApiClient.PostFile(url, path, contentType,
+            () => Debug.Log($"[MrCallRecorder] 업로드 완료: {path}"),
+            e => Debug.LogWarning($"[MrCallRecorder] 업로드 실패: {e} - 기기에 남아있음: {path}"));
     }
 
     class LogObserver : IMediaRecorderObserver
