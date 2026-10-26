@@ -2,28 +2,28 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 
-// È­»óÅëÈ­ ¿ä¾à °á°ú Ç¥½Ã ½ºÅ©¸³Æ®
+// í™”ìƒí†µí™” ìš”ì•½ ê²°ê³¼ í‘œì‹œ ìŠ¤í¬ë¦½íŠ¸
 public class SummaryDisplay : MonoBehaviour
 {
     public static SummaryDisplay Instance;
 
-    [Header("UI ¿¬°á")]
-    public GameObject summaryPanel;     // ¿ä¾à °á°ú ÆĞ³Î
-    public TMP_Text summaryText;      // ¿ä¾à ÅØ½ºÆ®
-    public TMP_Text transcriptText;   // ¿ø¹® ÅØ½ºÆ® (¼±ÅÃ)
-    public GameObject loadingPanel;     // ·Îµù ÆĞ³Î ("¿ä¾à Áß..." Ç¥½Ã)
-    public TMP_Text loadingText;      // ·Îµù ÅØ½ºÆ®
-    public UnityEngine.UI.Button closeButton; // ´İ±â ¹öÆ°
+    [Header("UI ì—°ê²°")]
+    public GameObject summaryPanel;     // ìš”ì•½ ê²°ê³¼ íŒ¨ë„
+    public TMP_Text summaryText;      // ìš”ì•½ í…ìŠ¤íŠ¸
+    public TMP_Text transcriptText;   // ì›ë¬¸ í…ìŠ¤íŠ¸ (ì„ íƒ)
+    public GameObject loadingPanel;     // ë¡œë”© íŒ¨ë„ ("ìš”ì•½ ì¤‘..." í‘œì‹œ)
+    public TMP_Text loadingText;      // ë¡œë”© í…ìŠ¤íŠ¸
+    public UnityEngine.UI.Button closeButton; // ë‹«ê¸° ë²„íŠ¼
 
-    // SummaryDisplay ½Ì±ÛÅæ
+    // SummaryDisplay ì‹±ê¸€í†¤
     void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
     }
 
-    // ¿ä¾à ÆĞ³ÎÀÌ¶û ·Îµù ÆĞ³Î ´İ¾ÆµÎ±â.
-    // ´İ±â¹öÆ° ¸®½º³Ê ¿¬°á
+    // ìš”ì•½ íŒ¨ë„ì´ë‘ ë¡œë”© íŒ¨ë„ ë‹«ì•„ë‘ê¸°.
+    // ë‹«ê¸°ë²„íŠ¼ ë¦¬ìŠ¤ë„ˆ ì—°ê²°
     void Start()
     {
         closeButton?.onClick.AddListener(Close);
@@ -31,36 +31,36 @@ public class SummaryDisplay : MonoBehaviour
         loadingPanel?.SetActive(false); 
     }
 
-    // ·Îµù Ç¥½Ã (Àü¼Û Áß)
+    // ë¡œë”© í‘œì‹œ (ì „ì†¡ ì¤‘)
     public void ShowLoading()
     {
         summaryPanel?.SetActive(false);
-        loadingPanel?.SetActive(true); // ·ÎµùÆĞ³Î È°¼ºÈ­
-        if (loadingText) loadingText.text = "È­»óÅëÈ­ ³»¿ëÀ» ¿ä¾àÇÏ´Â Áß...";
+        loadingPanel?.SetActive(true); // ë¡œë”©íŒ¨ë„ í™œì„±í™”
+        if (loadingText) loadingText.text = "í™”ìƒí†µí™” ë‚´ìš©ì„ ìš”ì•½í•˜ëŠ” ì¤‘...";
     }
 
-    // ¿ä¾à °á°ú Ç¥½Ã
+    // ìš”ì•½ ê²°ê³¼ í‘œì‹œ
     public void ShowSummary(string summary, string transcript = "")
     {
-        loadingPanel?.SetActive(false);// ·ÎµùÆĞ³Î ºñÈ°¼ºÈ­
-        summaryPanel?.SetActive(true); // ¿ä¾àÆĞ³Î È°¼ºÈ­
+        loadingPanel?.SetActive(false);// ë¡œë”©íŒ¨ë„ ë¹„í™œì„±í™”
+        summaryPanel?.SetActive(true); // ìš”ì•½íŒ¨ë„ í™œì„±í™”
 
-        if (summaryText) summaryText.text = summary; // ¿ä¾à ÅØ½ºÆ®
-        if (transcriptText) transcriptText.text = transcript; // ¿øº» ÇÊ»ç ÅØ½ºÆ®
+        if (summaryText) summaryText.text = summary; // ìš”ì•½ í…ìŠ¤íŠ¸
+        if (transcriptText) transcriptText.text = transcript; // ì›ë³¸ í•„ì‚¬ í…ìŠ¤íŠ¸
     }
 
-    // ¿À·ù Ç¥½Ã
+    // ì˜¤ë¥˜ í‘œì‹œ
     public void ShowError(string message)
     {
-        loadingPanel?.SetActive(false); // ·ÎµùÆĞ³Î È°¼ºÈ­
-        summaryPanel?.SetActive(true); // ¿ä¾àÆĞ³Î È°¼ºÈ­
-        if (summaryText) summaryText.text = $"¿À·ù: {message}";
+        loadingPanel?.SetActive(false); // ë¡œë”©íŒ¨ë„ í™œì„±í™”
+        summaryPanel?.SetActive(true); // ìš”ì•½íŒ¨ë„ í™œì„±í™”
+        if (summaryText) summaryText.text = $"ì˜¤ë¥˜: {message}";
     }
 
-    // ´İ±â
+    // ë‹«ê¸°
     public void Close()
     {
-        summaryPanel?.SetActive(false); // ¿ä¾à, ·Îµù ÆĞ³Î ºñÈ°¼ºÈ­
+        summaryPanel?.SetActive(false); // ìš”ì•½, ë¡œë”© íŒ¨ë„ ë¹„í™œì„±í™”
         loadingPanel?.SetActive(false);
     }
 }

@@ -16,7 +16,7 @@ public class InspectionItem
     public string location;
     public string inspection_id;
     public string inspection_result;    // normal / issue_found
-    public string inspection_note;     // Á¡°Ë ¸Ş¸ğ
+    public string inspection_note;     // ì ê²€ ë©”ëª¨
     public string scheduled_at;
     public string completed_at;
     public string inspection_status;      // pending / in_progress / completed
@@ -38,8 +38,8 @@ public class SensorItem
     public string sensor_type;
     public string sensor_name;
     public string unit;
-    public float? min_threshold;  // float ¡æ float?
-    public float? max_threshold;  // float ¡æ float?
+    public float? min_threshold;  // float â†’ float?
+    public float? max_threshold;  // float â†’ float?
     public float value;
     public string measured_at;
     public string status;
@@ -48,7 +48,7 @@ public class SensorItem
 [Serializable]
 public class SaveInspectionRequest
 {
-    public string inspection_id;   // ±âÁ¸ remote_inspection ·¹ÄÚµå id
+    public string inspection_id;   // ê¸°ì¡´ remote_inspection ë ˆì½”ë“œ id
     public string equipment_id;
     public string inspector_id;
     public string result;          // normal / issue_found

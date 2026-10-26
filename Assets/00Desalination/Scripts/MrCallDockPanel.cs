@@ -75,10 +75,6 @@ public class MrCallDockPanel : MonoBehaviour
 
     // 2026-08-26: "MRDockCanvas는 컨트롤러로 조정할 수 있어야 함, 메뉴패널처럼" - 씬의 그랩 가능한
     // "메뉴" 패널(XRGrabInteractable+Rigidbody+BoxCollider)과 동일한 레시피를 그대로 옮겨왔다.
-    // 한 번이라도 손으로 잡아서 옮기면 그 뒤로는 Update()의 카메라-추적(HUD) 로직이 그 위치를
-    // 다시 덮어쓰지 않도록 막는다 - 안 그러면 놓자마자 다음 프레임에 원래 HUD 위치로 튕겨 돌아간다.
-    bool grabbedOnce;
-
     // 2026-09-03: 유지보수 도착 연출에서 EquipmentMarker가 "도크를 정보 패널 옆 여기에" 라고
     // 포즈를 남기면(MrArrivalState.HasDockPose), 카메라 앞 HUD 대신 그 자리에 월드 고정으로 띄운다.
     bool worldAnchored;
@@ -120,7 +116,6 @@ public class MrCallDockPanel : MonoBehaviour
     {
         channelName = channel;
         callStartTime = Time.time;
-        grabbedOnce = false; // 새 통화마다 기본 HUD 위치에서 다시 시작
         canvasGo.SetActive(true);
 
         // 2026-10-21: 원격지원으로 설비 앞에 도착했으면 세 패널을 시선 기준으로 한 번에 배치한다
@@ -550,7 +545,6 @@ public class MrCallDockPanel : MonoBehaviour
         var dockGrab = canvasGo.AddComponent<XRGrabInteractable>();
         dockGrab.movementType = XRBaseInteractable.MovementType.Kinematic;
         dockGrab.throwOnDetach = false;
-        dockGrab.selectEntered.AddListener(_ => grabbedOnce = true);
 
         var bg = canvasGo.AddComponent<Image>();
         bg.color = MrUiTheme.Panel;

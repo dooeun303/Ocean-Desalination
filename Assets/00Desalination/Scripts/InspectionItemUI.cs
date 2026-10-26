@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class InspectionItemUI : MonoBehaviour
 {
-    [Header("UI ¿¬°á (¾Ë¶÷ÇÑ°³ ÇÁ¸®ÆÕ ³»ºÎ)")]
+    [Header("UI ì—°ê²° (ì•ŒëžŒí•œê°œ í”„ë¦¬íŒ¹ ë‚´ë¶€)")]
     public TMP_Text equipmentNameText;
     public TMP_Text locationText;
     public TMP_Text statusText;
@@ -12,7 +12,7 @@ public class InspectionItemUI : MonoBehaviour
     public TMP_Text scheduledAtText;
     public Button actionButton;
 
-    [Header("»ö»ó")]
+    [Header("ìƒ‰ìƒ")]
     public Color colorCritical = new Color(0.97f, 0.32f, 0.29f);
     public Color colorWarning = new Color(0.94f, 0.71f, 0.16f);
     public Color colorNormal = new Color(0.25f, 0.73f, 0.31f);
@@ -36,10 +36,10 @@ public class InspectionItemUI : MonoBehaviour
         {
             statusText.text = data.inspection_status switch
             {
-                "completed" => "¿Ï·á",
-                "in_progress" => "ÁøÇà Áß",
-                "pending" => "´ë±â",
-                _ => "¹ÌÁ¤"
+                "completed" => "ì™„ë£Œ",
+                "in_progress" => "ì§„í–‰ ì¤‘",
+                "pending" => "ëŒ€ê¸°",
+                _ => "ë¯¸ì •"
             };
             statusText.color = data.inspection_status switch
             {

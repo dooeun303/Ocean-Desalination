@@ -4,42 +4,42 @@ using UnityEngine.UI;
 
 public class AlarmItemUI : MonoBehaviour
 {
-    // ³¯Â¥, ³»¿ë ÅØ½ºÆ® 
-    [Header("ÅØ½ºÆ®")]
+    // ë‚ ì§œ, ë‚´ìš© í…ìŠ¤íŠ¸ 
+    [Header("í…ìŠ¤íŠ¸")]
     public TMP_Text dateText;
     public TMP_Text contentText;
 
-    [Header("½É°¢µµ »ö»ó ¹Ù")]
+    [Header("ì‹¬ê°ë„ ìƒ‰ìƒ ë°”")]
     public Image severityBar;
 
-    // µ¥ÀÌÅÍ ¼¼ÆÃ (GetAllAlarm.cs ¿¡¼­ alarm °´Ã¼¸¦ ¹Þ¾Æ¼­)
+    // ë°ì´í„° ì„¸íŒ… (GetAllAlarm.cs ì—ì„œ alarm ê°ì²´ë¥¼ ë°›ì•„ì„œ)
     public void SetData(AlarmData alarm)
     {
         if (dateText != null)
         {
             if (System.DateTime.TryParse(alarm.triggered_at, out System.DateTime dt))
             {
-                dt = dt.ToLocalTime(); // UTC ¡æ ÇÑ±¹½Ã°£
-                dateText.text = dt.ToString("yyyy³â M¿ù dÀÏ HH:mm:ss");
+                dt = dt.ToLocalTime(); // UTC â†’ í•œêµ­ì‹œê°„
+                dateText.text = dt.ToString("yyyyë…„ Mì›” dì¼ HH:mm:ss");
             }
             else
             {
-                dateText.text = alarm.triggered_at; // ÆÄ½Ì ½ÇÆÐ½Ã ¿øº» ±×´ë·Î
+                dateText.text = alarm.triggered_at; // íŒŒì‹± ì‹¤íŒ¨ì‹œ ì›ë³¸ ê·¸ëŒ€ë¡œ
             }
         }
 
         if (contentText != null)
         {
-            // equipment ÀÌ¸§, ¾Ë¶÷ description
+            // equipment ì´ë¦„, ì•ŒëžŒ description
             contentText.text = $"{alarm.equipment?.name} - {alarm.description}";
 
             
         }
 
-        // ½É°¢µµ »ö»ó
+        // ì‹¬ê°ë„ ìƒ‰ìƒ
         if (severityBar != null)
         {
-            // severity ¸¦ »ö»óÀ¸·Î Ç¥Çö
+            // severity ë¥¼ ìƒ‰ìƒìœ¼ë¡œ í‘œí˜„
             severityBar.color = alarm.severity switch
             {
                 "critical" => new Color(0.9f, 0.1f, 0.1f), // red

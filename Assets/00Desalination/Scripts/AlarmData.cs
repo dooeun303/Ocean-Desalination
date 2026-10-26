@@ -9,6 +9,6 @@ public class AlarmData
     [JsonProperty("severity")] public string severity;
     [JsonProperty("description")] public string description;
     [JsonProperty("triggered_at")] public string triggered_at;
-    [JsonProperty("equipment")] public EquipmentData equipment;  // °Á ¿Ã∞…∑Œ ±≥√º
+    [JsonProperty("equipment")] public EquipmentData equipment;  // ‚Üê Ïù¥Í±∏Î°ú ÍµêÏ≤¥
     [JsonProperty("mr_space_id")] public string mr_space_id;
 }

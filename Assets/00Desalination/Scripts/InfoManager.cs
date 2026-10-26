@@ -3,25 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// Á¤º¸°øÀ¯ ÆË¾÷ °ü¸® ½ºÅ©¸³Æ®
-// ¼­¹ö¿¡¼­ ÆÄÀÏ ¸ñ·Ï ¹Ş¾Æ¼­ ¾ÆÀÌÅÛ »ı¼º
+// ì •ë³´ê³µìœ  íŒì—… ê´€ë¦¬ ìŠ¤í¬ë¦½íŠ¸
+// ì„œë²„ì—ì„œ íŒŒì¼ ëª©ë¡ ë°›ì•„ì„œ ì•„ì´í…œ ìƒì„±
 public class InfoShareManager : MonoBehaviour
 {
     public string serverUrl => ServerConfig.BaseUrl + "/api/files";
 
-    [Header("UI ¿¬°á")]
-    public Transform itemContainer;   // ¾ÆÀÌÅÛ ÄÁÅ×ÀÌ³Ê
-    public GameObject itemPrefab;      // Á¤º¸°øÀ¯¾ÆÀÌÅÛ ÇÁ¸®ÆÕ
-    public Canvas rootCanvas;      // ·çÆ® Äµ¹ö½º (µå·¡±×¿ë)
+    [Header("UI ì—°ê²°")]
+    public Transform itemContainer;   // ì•„ì´í…œ ì»¨í…Œì´ë„ˆ
+    public GameObject itemPrefab;      // ì •ë³´ê³µìœ ì•„ì´í…œ í”„ë¦¬íŒ¹
+    public Canvas rootCanvas;      // ë£¨íŠ¸ ìº”ë²„ìŠ¤ (ë“œë˜ê·¸ìš©)
 
-    private string _currentType = "general"; // ÇöÀç ¼±ÅÃµÈ Å¸ÀÔ
+    private string _currentType = "general"; // í˜„ì¬ ì„ íƒëœ íƒ€ì…
 
     void OnEnable()
     {
         LoadByType(_currentType);
     }
 
-    // ÅÇ ¹öÆ°¿¡¼­ È£Ãâ
+    // íƒ­ ë²„íŠ¼ì—ì„œ í˜¸ì¶œ
     public void OnTabGeneral() => LoadByType("general");
     public void OnTabScreenshot() => LoadByType("screenshot");
     public void OnTabPump() => LoadByType("pump");
@@ -33,9 +33,9 @@ public class InfoShareManager : MonoBehaviour
         StartCoroutine(LoadFiles(type));
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ÆÄÀÏ ¸ñ·Ï ·Îµå
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // íŒŒì¼ ëª©ë¡ ë¡œë“œ
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private IEnumerator LoadFiles(string type = "general")
     {
         string url = string.IsNullOrEmpty(type) ? serverUrl : $"{serverUrl}?type={type}";
@@ -44,22 +44,22 @@ public class InfoShareManager : MonoBehaviour
 
         if (req.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("[InfoShareManager] ÆÄÀÏ ¸ñ·Ï ·Îµå ½ÇÆĞ: " + req.error);
+            Debug.LogError("[InfoShareManager] íŒŒì¼ ëª©ë¡ ë¡œë“œ ì‹¤íŒ¨: " + req.error);
             yield break;
         }
 
         var response = JsonUtility.FromJson<FileListResponse>(req.downloadHandler.text);
         if (!response.success || response.data == null)
         {
-            Debug.LogWarning("[InfoShareManager] ÆÄÀÏ µ¥ÀÌÅÍ ¾øÀ½");
+            Debug.LogWarning("[InfoShareManager] íŒŒì¼ ë°ì´í„° ì—†ìŒ");
             yield break;
         }
 
-        // ±âÁ¸ ¾ÆÀÌÅÛ Á¦°Å
+        // ê¸°ì¡´ ì•„ì´í…œ ì œê±°
         foreach (Transform child in itemContainer)
             Destroy(child.gameObject);
 
-        // ¾ÆÀÌÅÛ »ı¼º
+        // ì•„ì´í…œ ìƒì„±
         foreach (var file in response.data)
         {
             var go = Instantiate(itemPrefab, itemContainer);
@@ -69,10 +69,10 @@ public class InfoShareManager : MonoBehaviour
                 icon.rootCanvas = rootCanvas;
                 icon.SetData(file.id, file.name, file.url);
 
-                // ÀÌ¹ÌÁö°¡ ÀÖÀ¸¸é ´Ù¿î·ÎµåÇØ¼­ Ç¥½Ã
+                // ì´ë¯¸ì§€ê°€ ìˆìœ¼ë©´ ë‹¤ìš´ë¡œë“œí•´ì„œ í‘œì‹œ
                 if (!string.IsNullOrEmpty(file.url))
                 {
-                    // »ó´ë°æ·Î¸é ¼­¹ö ÁÖ¼Ò ºÙÀÌ±â
+                    // ìƒëŒ€ê²½ë¡œë©´ ì„œë²„ ì£¼ì†Œ ë¶™ì´ê¸°
                     string imageUrl = file.url.StartsWith("http")
                         ? file.url
                         : serverUrl.Replace("/api/files", "") + file.url;
@@ -81,12 +81,12 @@ public class InfoShareManager : MonoBehaviour
             }
         }
 
-        Debug.Log($"[InfoShareManager] ÆÄÀÏ {response.data.Length}°³ ·Îµå ¿Ï·á");
+        Debug.Log($"[InfoShareManager] íŒŒì¼ {response.data.Length}ê°œ ë¡œë“œ ì™„ë£Œ");
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ÀÌ¹ÌÁö ´Ù¿î·Îµå
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ì´ë¯¸ì§€ ë‹¤ìš´ë¡œë“œ
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private IEnumerator LoadImage(string url, FileIconItem icon)
     {
         using var req = UnityWebRequestTexture.GetTexture(url);
@@ -94,7 +94,7 @@ public class InfoShareManager : MonoBehaviour
 
         if (req.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogWarning("[InfoShareManager] ÀÌ¹ÌÁö ·Îµå ½ÇÆĞ: " + req.error);
+            Debug.LogWarning("[InfoShareManager] ì´ë¯¸ì§€ ë¡œë“œ ì‹¤íŒ¨: " + req.error);
             yield break;
         }
 
@@ -109,9 +109,9 @@ public class InfoShareManager : MonoBehaviour
     }
 }
 
-// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-// µ¥ÀÌÅÍ ¸ğµ¨
-// ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ë°ì´í„° ëª¨ë¸
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 [System.Serializable]
 public class FileData
 {

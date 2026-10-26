@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Teleport : MonoBehaviour
 {
-    [SerializeField] private Transform spawnPoint; // ÀÌµ¿ À§Ä¡
+    [SerializeField] private Transform spawnPoint; // ì´ë™ ìœ„ì¹˜
     [SerializeField] private Transform xrRig; // XR RIG
 
 
@@ -12,7 +12,7 @@ public class Teleport : MonoBehaviour
     {
         StartCoroutine(FadeController.Instance.FadeAndTeleport(() =>
         {
-            Debug.Log("[Maintenance] ÅÚ·¹Æ÷Æ® ½ÇÇà!");
+            Debug.Log("[Maintenance] í…”ë ˆí¬íŠ¸ ì‹¤í–‰!");
             xrRig.position = spawnPoint.position;
             xrRig.rotation = spawnPoint.rotation;
         }));

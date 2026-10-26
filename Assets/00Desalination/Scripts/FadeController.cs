@@ -13,31 +13,31 @@ public class FadeController : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        fadeImage.color = new Color(0, 0, 0, 0); // image ÄÃ·¯ ÃÊ±âÈ­ (°ËÁ¤»ö)
+        fadeImage.color = new Color(0, 0, 0, 0); // image ì»¬ëŸ¬ ì´ˆê¸°í™” (ê²€ì •ìƒ‰)
     }
 
     void Update()
     {
-        // ÆäÀÌµå Äµ¹ö½ºÀÇ ÀÌ¹ÌÁöÀÇ À§Ä¡°¡ Ä«¸Ş¶óÀÇ ¾Õ¿¡ À§Ä¡ÇÏµµ·Ï ÇÔ
+        // í˜ì´ë“œ ìº”ë²„ìŠ¤ì˜ ì´ë¯¸ì§€ì˜ ìœ„ì¹˜ê°€ ì¹´ë©”ë¼ì˜ ì•ì— ìœ„ì¹˜í•˜ë„ë¡ í•¨
         transform.position = Camera.main.transform.position + Camera.main.transform.forward * 0.1f;
         transform.rotation = Camera.main.transform.rotation;
     }
 
-    // FadeAndTeleport ÇÔ¼ö (ÆäÀÌµå ÇÔ¼ö¿¡ ÅÚ·¹Æ÷Æ®±îÁö ÇÕÄ§)
+    // FadeAndTeleport í•¨ìˆ˜ (í˜ì´ë“œ í•¨ìˆ˜ì— í…”ë ˆí¬íŠ¸ê¹Œì§€ í•©ì¹¨)
     public IEnumerator FadeAndTeleport(System.Action onMidpoint, System.Action onRevealStart = null)
     {
-        yield return StartCoroutine(Fade(0f, 1f)); // ÆäÀÌµåÀÎ
+        yield return StartCoroutine(Fade(0f, 1f)); // í˜ì´ë“œì¸
 
-        onMidpoint?.Invoke(); // ÅÚ·¹Æ÷Æ® ½ÇÇà
+        onMidpoint?.Invoke(); // í…”ë ˆí¬íŠ¸ ì‹¤í–‰
 
-        yield return new WaitForSeconds(0.5f); // 0.1ÃÊ ´ë±â
+        yield return new WaitForSeconds(0.5f); // 0.1ì´ˆ ëŒ€ê¸°
 
         onRevealStart?.Invoke(); // reveal start - arrival camera motion etc. (2026-10-20)
-        yield return StartCoroutine(Fade(1f, 0f)); // ÆäÀÌµå¾Æ¿ô
+        yield return StartCoroutine(Fade(1f, 0f)); // í˜ì´ë“œì•„ì›ƒ
 
     }
     
-    // Fade ÇÔ¼ö (ÀÌ¹ÌÁö »ö»óº¯°æ)
+    // Fade í•¨ìˆ˜ (ì´ë¯¸ì§€ ìƒ‰ìƒë³€ê²½)
     private IEnumerator Fade(float from, float to) 
     {
         float elapsed = 0f;
@@ -50,6 +50,4 @@ public class FadeController : MonoBehaviour
         }
         fadeImage.color = new Color(0, 0, 0, to);
     }
-
-    float elapsed = 0f; 
 }
