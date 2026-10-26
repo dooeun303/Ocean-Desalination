@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 // ─────────────────────────────────────────────────────────────
 // 화상통화 요청/수신 웹소켓 스크립트 (MR)
 // AlarmWebSocket.cs 와 동일한 방식으로 서버(ws://192.168.0.66:3000)에 연결하고,
-// "call_request" / "call_response" type의 메시지만 별도로 주고받는다.
+// 화상통화·작업 진행·실시간 지시 메시지를 주고받는다(종류는 WsMessageType).
 // ─────────────────────────────────────────────────────────────
 public class VideoCallSignalingMR : MonoBehaviour
 {
@@ -114,26 +114,26 @@ public class VideoCallSignalingMR : MonoBehaviour
     {
         switch (msg.type)
         {
-            case "call_response":
+            case WsMessageType.CallResponse:
                 if (msg.accepted) OnCallAccepted?.Invoke(msg.channelName);
                 else OnCallRejected?.Invoke(msg.channelName);
                 break;
-            case "call_end":
+            case WsMessageType.CallEnd:
                 OnCallEnded?.Invoke(msg.channelName);
                 break;
-            case "guide_step_control":
+            case WsMessageType.GuideStepControl:
                 OnGuideStepControlReceived?.Invoke(msg.stepIndex, msg.stepCount);
                 break;
-            case "maintenance_complete":
+            case WsMessageType.MaintenanceComplete:
                 OnMaintenanceComplete?.Invoke();
                 break;
-            case "ar_location":
+            case WsMessageType.ArLocation:
                 OnArLocationReceived?.Invoke(msg.equipmentId);
                 break;
-            case "ar_pose":
+            case WsMessageType.ArPose:
                 OnArPoseReceived?.Invoke(new Vector3(msg.poseX, msg.poseY, msg.poseZ));
                 break;
-            case "support_call_request":
+            case WsMessageType.SupportCallRequest:
                 if (!string.IsNullOrEmpty(msg.id)) OnSupportCallRequested?.Invoke(msg.id);
                 break;
         }
@@ -146,7 +146,7 @@ public class VideoCallSignalingMR : MonoBehaviour
     {
         var msg = new CallSignalMessage
         {
-            type = "call_request",
+            type = WsMessageType.CallRequest,
             channelName = channelName
         };
 
@@ -227,17 +227,17 @@ public class VideoCallSignalingMR : MonoBehaviour
     // ─────────────────────────────────────────────
     public void SendDrawStart(string strokeId, string colorHex, float widthNorm)
     {
-        Send(new CallSignalMessage { type = "draw_start", strokeId = strokeId, drawColor = colorHex, drawWidth = widthNorm });
+        Send(new CallSignalMessage { type = WsMessageType.DrawStart, strokeId = strokeId, drawColor = colorHex, drawWidth = widthNorm });
     }
 
     public void SendDrawPoint(string strokeId, float x, float y)
     {
-        Send(new CallSignalMessage { type = "draw_point", strokeId = strokeId, drawX = x, drawY = y });
+        Send(new CallSignalMessage { type = WsMessageType.DrawPoint, strokeId = strokeId, drawX = x, drawY = y });
     }
 
     public void SendDrawEnd(string strokeId)
     {
-        Send(new CallSignalMessage { type = "draw_end", strokeId = strokeId });
+        Send(new CallSignalMessage { type = WsMessageType.DrawEnd, strokeId = strokeId });
     }
 
     // ─────────────────────────────────────────────
@@ -246,7 +246,7 @@ public class VideoCallSignalingMR : MonoBehaviour
     // ─────────────────────────────────────────────
     public void SendModelRotation(Quaternion rotation)
     {
-        Send(new CallSignalMessage { type = "model_rotate", rotX = rotation.x, rotY = rotation.y, rotZ = rotation.z, rotW = rotation.w });
+        Send(new CallSignalMessage { type = WsMessageType.ModelRotate, rotX = rotation.x, rotY = rotation.y, rotZ = rotation.z, rotW = rotation.w });
     }
 
     // ─────────────────────────────────────────────
@@ -261,7 +261,7 @@ public class VideoCallSignalingMR : MonoBehaviour
     {
         Send(new CallSignalMessage
         {
-            type = "model_point",
+            type = WsMessageType.ModelPoint,
             pointing = pointing,
             partName = partName,
             pointX = localPoint.x,
@@ -280,7 +280,7 @@ public class VideoCallSignalingMR : MonoBehaviour
     // ─────────────────────────────────────────────
     public void SendModelExplode(bool exploded)
     {
-        Send(new CallSignalMessage { type = "model_explode", exploded = exploded });
+        Send(new CallSignalMessage { type = WsMessageType.ModelExplode, exploded = exploded });
     }
 
     // ─────────────────────────────────────────────
@@ -290,7 +290,7 @@ public class VideoCallSignalingMR : MonoBehaviour
     // ─────────────────────────────────────────────
     public void SendModelView(bool open, string modelUrl = null)
     {
-        Send(new CallSignalMessage { type = "model_view", modelViewOpen = open, modelUrl = modelUrl });
+        Send(new CallSignalMessage { type = WsMessageType.ModelView, modelViewOpen = open, modelUrl = modelUrl });
     }
 
     // 이미 JSON으로 만든 메시지를 그대로 보낸다(AlarmWebSocket이 끊겼을 때 파일공유 등 대신 전송용).
@@ -321,7 +321,7 @@ public class VideoCallSignalingMR : MonoBehaviour
     {
         var msg = new CallSignalMessage
         {
-            type = "call_end",
+            type = WsMessageType.CallEnd,
             channelName = channelName
         };
 
@@ -363,12 +363,11 @@ public class VideoCallSignalingMR : MonoBehaviour
 [System.Serializable]
 public class CallSignalMessage
 {
-    public string type;         // "call_request" / "call_response" / "guide_step" 등
+    public string type;         // WsMessageType 중 하나
     public string channelName;  // 통화방 이름 (equipment_id 등)
     public bool accepted;       // call_response 일 때만 사용
-    public int stepIndex;       // guide_step 일 때만 사용 (1부터 시작)
-    public int stepCount;       // guide_step 일 때만 사용
-    public string arText;       // guide_step 일 때만 사용 - AR에 표시할 한 문장
+    public int stepIndex;       // guide_step_control 일 때만 사용 (1부터 시작)
+    public int stepCount;       // guide_step_control 일 때만 사용
     public string strokeId;     // draw_start/draw_point/draw_end 공용
     public string drawColor;    // draw_start 전용 - "#RRGGBB"
     public float drawWidth;     // draw_start 전용 - 캔버스 너비 대비 정규화된 두께

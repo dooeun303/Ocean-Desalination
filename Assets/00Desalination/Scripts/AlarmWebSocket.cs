@@ -58,7 +58,7 @@ public class AlarmWebSocket : MonoBehaviour
                 // JsonUtility 대신 Newtonsoft 사용
                 AlarmData alarm = JsonConvert.DeserializeObject<AlarmData>(e.Data);
 
-                if (alarm != null && alarm.type == "ALARM")
+                if (alarm != null && alarm.type == WsMessageType.Alarm)
                 {
                     lock (lockObj) { pendingAlarm = alarm; }
                 }

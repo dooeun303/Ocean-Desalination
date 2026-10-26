@@ -38,7 +38,7 @@ public class AlarmUI : MonoBehaviour
     {
         var demoAlarm = new AlarmData
         {
-            type = "ALARM",
+            type = WsMessageType.Alarm,
             alarm_id = "demo",
             alarm_code = "demo",
             severity = demoSeverity,

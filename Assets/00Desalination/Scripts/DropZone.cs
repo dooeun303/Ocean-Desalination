@@ -76,7 +76,7 @@ public class DropZone : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     {
         var message = JsonUtility.ToJson(new FileShareMessage
         {
-            type = "file_share",
+            type = WsMessageType.FileShare,
             file_id = fileId,
             file_url = fileUrl
         });
