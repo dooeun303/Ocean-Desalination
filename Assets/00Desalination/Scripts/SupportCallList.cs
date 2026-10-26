@@ -65,6 +65,7 @@ public class SupportCallList : MonoBehaviour
     IEnumerator FetchList()
     {
         using var req = UnityWebRequest.Get(serverUrl);
+        req.timeout = ServerConfig.RequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result != UnityWebRequest.Result.Success)
@@ -122,6 +123,14 @@ public class SupportCallList : MonoBehaviour
 
     void OnAcceptClicked(SupportCallData data)
     {
+        // 2026-10-23: 통화 중에 다른 요청을 수락하면 이전 통화가 정리되지 않은 채 꼬였다(MrCallDockPanel.IsInCall
+        // 참고). 서버에 수락(PATCH /accept)을 보내기 전에 막아서, 요청은 대기(ringing) 상태 그대로 남긴다.
+        if (MrCallDockPanel.IsInCall)
+        {
+            Debug.LogWarning("[SupportCallList] 통화 중이라 수락 안 함: " + data.id);
+            SupportCallRequestAlert.Instance?.ShowMessage("통화 중", "지금 통화를 먼저 종료하세요", "통화를 끝낸 뒤 이 요청을 수락할 수 있습니다");
+            return;
+        }
         StartCoroutine(AcceptRequest(data));
     }
 
@@ -130,6 +139,7 @@ public class SupportCallList : MonoBehaviour
         var body = new AcceptBody { receiver_id = "MR" };
         byte[] bytes = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(body));
         using var req = new UnityWebRequest(serverUrl + "/" + data.id + "/accept", "PATCH");
+        req.timeout = ServerConfig.RequestTimeout;
         req.uploadHandler = new UploadHandlerRaw(bytes);
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SetRequestHeader("Content-Type", "application/json");
@@ -289,6 +299,7 @@ public class SupportCallList : MonoBehaviour
     IEnumerator RejectRequest(SupportCallData data)
     {
         using var req = new UnityWebRequest(serverUrl + "/" + data.id + "/reject", "PATCH");
+        req.timeout = ServerConfig.RequestTimeout;
         req.downloadHandler = new DownloadHandlerBuffer();
         yield return req.SendWebRequest();
 

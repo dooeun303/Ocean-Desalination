@@ -49,6 +49,7 @@ public class GetAllAlarm : MonoBehaviour
         // ���� url �� get ��û
         using (UnityWebRequest req = UnityWebRequest.Get(url))
         {
+            req.timeout = ServerConfig.RequestTimeout;
             // ��û�� ������ ����
             yield return req.SendWebRequest();
 

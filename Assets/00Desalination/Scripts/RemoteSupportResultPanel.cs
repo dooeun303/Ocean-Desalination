@@ -209,6 +209,7 @@ public class RemoteSupportResultPanel : MonoBehaviour
         var form = new WWWForm();
         form.AddBinaryData("file", wav, "record.wav", "audio/wav");
         using var req = UnityWebRequest.Post(serverBaseUrl.TrimEnd('/') + "/api/ai/transcribe", form);
+        req.timeout = ServerConfig.LongRequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result == UnityWebRequest.Result.Success)
@@ -242,6 +243,7 @@ public class RemoteSupportResultPanel : MonoBehaviour
             string url = serverBaseUrl.TrimEnd('/') + "/api/support-calls/" + _supportCallId + "/result";
             string json = JsonUtility.ToJson(new Body { support_result = code, support_note = note });
             using var req = new UnityWebRequest(url, "PATCH");
+            req.timeout = ServerConfig.RequestTimeout;
             req.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
             req.downloadHandler = new DownloadHandlerBuffer();
             req.SetRequestHeader("Content-Type", "application/json");
@@ -284,6 +286,7 @@ public class RemoteSupportResultPanel : MonoBehaviour
     IEnumerator FetchContext()
     {
         using var req = UnityWebRequest.Get(serverBaseUrl.TrimEnd('/') + "/api/support-calls/" + _supportCallId);
+        req.timeout = ServerConfig.RequestTimeout;
         yield return req.SendWebRequest();
         if (req.result != UnityWebRequest.Result.Success) yield break;
 

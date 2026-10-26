@@ -41,6 +41,7 @@ public class AlarmTrigger : MonoBehaviour
         {
             req = UnityWebRequest.PostWwwForm(url, "");
         }
+        req.timeout = ServerConfig.RequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result == UnityWebRequest.Result.Success)

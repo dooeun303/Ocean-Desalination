@@ -147,6 +147,7 @@ public class WorkGuidePanel : MonoBehaviour
         {
             string url = ServerConfig.BaseUrl + "/api/support-calls/" + callId;
             using var req = UnityWebRequest.Get(url);
+            req.timeout = ServerConfig.RequestTimeout;
             yield return req.SendWebRequest();
             if (req.result == UnityWebRequest.Result.Success)
             {
@@ -169,6 +170,7 @@ public class WorkGuidePanel : MonoBehaviour
         {
             string url = ServerConfig.BaseUrl + "/api/manuals/" + manualId + "/steps";
             using var req = UnityWebRequest.Get(url);
+            req.timeout = ServerConfig.RequestTimeout;
             yield return req.SendWebRequest();
             if (req.result == UnityWebRequest.Result.Success)
             {

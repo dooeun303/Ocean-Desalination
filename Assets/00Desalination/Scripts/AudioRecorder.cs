@@ -72,6 +72,7 @@ public class AudioRecorder : MonoBehaviour
             form.AddField("maintenance_id", maintenanceId);
 
         using var req = UnityWebRequest.Post(serverUrl, form);
+        req.timeout = ServerConfig.LongRequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result == UnityWebRequest.Result.Success)

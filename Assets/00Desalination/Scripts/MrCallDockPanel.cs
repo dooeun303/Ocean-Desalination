@@ -73,6 +73,11 @@ public class MrCallDockPanel : MonoBehaviour
     IRtcEngineEx _rtcEngine;
     bool _agoraInCall;
 
+    // 영상 영역의 "연결 대기 중" 문구 - 토큰 재시도/실패도 여기에 표시한다.
+    const string DefaultConnectingText = "연결 대기 중";
+    Text connectingText;
+    void SetConnectingText(string s) { if (connectingText != null) connectingText.text = s; }
+
     // 2026-08-26: "MRDockCanvas는 컨트롤러로 조정할 수 있어야 함, 메뉴패널처럼" - 씬의 그랩 가능한
     // "메뉴" 패널(XRGrabInteractable+Rigidbody+BoxCollider)과 동일한 레시피를 그대로 옮겨왔다.
     // 2026-09-03: 유지보수 도착 연출에서 EquipmentMarker가 "도크를 정보 패널 옆 여기에" 라고
@@ -112,10 +117,23 @@ public class MrCallDockPanel : MonoBehaviour
         VideoCallSignalingMR.OnMaintenanceComplete -= HandleMaintenanceComplete;
     }
 
+    // 2026-10-23: 지금 통화 중인지 - 통화 중에 다른 지원요청을 수락하면 이전 Agora 채널을 안 나간 채
+    // 채널 이름만 덮어써져서, 이전 통화의 종료 신호도 무시되는 꼬인 상태가 됐다. SupportCallList가 이걸
+    // 보고 수락을 막는다. 도크가 수락 신호를 받았을 때도(다른 경로) 이전 통화부터 정리한다(HandleCallAccepted).
+    public static bool IsInCall { get; private set; }
+
     void HandleCallAccepted(string channel)
     {
+        if (IsInCall && channel != channelName)
+        {
+            Debug.LogWarning($"[MrCallDockPanel] 통화 중({channelName})에 새 통화({channel}) 수락 - 이전 채널부터 정리");
+            LeaveAgoraChannel();
+            RestoreSharePanel();
+        }
+        IsInCall = true;
         channelName = channel;
         callStartTime = Time.time;
+        SetConnectingText(DefaultConnectingText); // 이전 통화의 "연결 실패" 문구가 남지 않게
         canvasGo.SetActive(true);
 
         // 2026-10-21: 원격지원으로 설비 앞에 도착했으면 세 패널을 시선 기준으로 한 번에 배치한다
@@ -228,6 +246,7 @@ public class MrCallDockPanel : MonoBehaviour
     void HandleCallEnded(string channel)
     {
         if (channel != channelName) return;
+        IsInCall = false;
         canvasGo.SetActive(false);
         LeaveAgoraChannel();
         EquipmentMarker.CurrentlyHighlighted?.StopHighlight();
@@ -237,6 +256,7 @@ public class MrCallDockPanel : MonoBehaviour
 
     void HandleCallRejected(string channel)
     {
+        IsInCall = false;
         canvasGo.SetActive(false);
         // 아직 join 전이라(수락 전에는 Agora 채널에 들어가지 않음) 나갈 것도 없음.
         RestoreSharePanel();
@@ -249,6 +269,7 @@ public class MrCallDockPanel : MonoBehaviour
     // 안 하고, 깜빡이던 설비 하이라이트는 통화 상태와 무관하게 항상 정리한다.
     void HandleMaintenanceComplete()
     {
+        IsInCall = false;
         if (canvasGo.activeSelf)
         {
             canvasGo.SetActive(false);
@@ -261,26 +282,49 @@ public class MrCallDockPanel : MonoBehaviour
 
     // ───────────── Agora (JoinChannelVideoToken.cs의 로직을 참고, 이 도크 전용 인스턴스) ─────────────
 
+    // 2026-10-23: 예전엔 토큰 발급이 한 번 실패하면 조용히 끝나서 도크가 "연결 대기 중"으로 영원히 남았다.
+    // 몇 번 재시도하고, 그래도 안 되면 영상 영역에 실패를 표시한다(닫기 버튼으로 통화를 끝내면 됨).
+    const int TokenAttempts = 3;
+    const float TokenRetryDelay = 2f;
+
     IEnumerator FetchAgoraTokenAndJoin(string channel)
     {
-        string url = $"{AgoraTokenServerUrl}/api/rtc/{channel}/0";
-        using var req = UnityWebRequest.Get(url);
-        yield return req.SendWebRequest();
-
-        if (req.result != UnityWebRequest.Result.Success)
+        string token = null;
+        for (int attempt = 1; attempt <= TokenAttempts && token == null; attempt++)
         {
-            Debug.LogWarning("[MrCallDockPanel][Agora] 토큰 발급 실패: " + req.error);
-            yield break;
+            if (attempt > 1)
+            {
+                SetConnectingText($"연결 재시도 중 ({attempt}/{TokenAttempts})");
+                yield return new WaitForSeconds(TokenRetryDelay);
+            }
+            if (!IsInCall || channel != channelName) yield break; // 기다리는 사이 통화가 이미 끝났거나 바뀜
+
+            using var req = UnityWebRequest.Get($"{AgoraTokenServerUrl}/api/rtc/{channel}/0");
+            req.timeout = ServerConfig.RequestTimeout;
+            yield return req.SendWebRequest();
+
+            if (req.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning($"[MrCallDockPanel][Agora] 토큰 발급 실패 ({attempt}/{TokenAttempts}): {req.error}");
+                continue;
+            }
+            token = JsonUtility.FromJson<AgoraTokenResponse>(req.downloadHandler.text)?.token;
+            if (string.IsNullOrEmpty(token))
+            {
+                Debug.LogWarning($"[MrCallDockPanel][Agora] 토큰 응답이 비어있음 ({attempt}/{TokenAttempts})");
+                token = null;
+            }
         }
 
-        var tokenResponse = JsonUtility.FromJson<AgoraTokenResponse>(req.downloadHandler.text);
-        if (tokenResponse == null || string.IsNullOrEmpty(tokenResponse.token))
+        // 통화가 끝나도 channelName은 그대로 남아서, 이름 비교만으로는 "끝난 통화"를 못 걸렀다 - IsInCall도 본다.
+        if (!IsInCall || channel != channelName) yield break; // 토큰 기다리는 사이 통화가 이미 끝났거나 바뀜
+        if (token == null)
         {
-            Debug.LogWarning("[MrCallDockPanel][Agora] 토큰 응답이 비어있음");
+            SetConnectingText("연결 실패 - 서버 상태를 확인하세요");
             yield break;
         }
-
-        if (channel != channelName) yield break; // 토큰 기다리는 사이 통화가 이미 끝났거나 바뀜
+        SetConnectingText(DefaultConnectingText);
+        var tokenResponse = new AgoraTokenResponse { token = token };
 
         EnsureAgoraEngine();
         _rtcEngine.SetClientRole(CLIENT_ROLE_TYPE.CLIENT_ROLE_BROADCASTER);
@@ -306,6 +350,7 @@ public class MrCallDockPanel : MonoBehaviour
         string recToken = null;
         using (var recReq = UnityWebRequest.Get($"{AgoraTokenServerUrl}/api/rtc/{channel}_mrrec/0"))
         {
+            recReq.timeout = ServerConfig.RequestTimeout;
             yield return recReq.SendWebRequest();
             if (recReq.result == UnityWebRequest.Result.Success)
                 recToken = JsonUtility.FromJson<AgoraTokenResponse>(recReq.downloadHandler.text)?.token;
@@ -352,6 +397,7 @@ public class MrCallDockPanel : MonoBehaviour
 
     void OnDestroy()
     {
+        IsInCall = false; // 정적 값이라 씬이 바뀌어도 남는다
         if (_rtcEngine != null)
         {
             recorder?.Abort();
@@ -410,7 +456,9 @@ public class MrCallDockPanel : MonoBehaviour
 
     IEnumerator EndSupportCallOnServer(string callId)
     {
-        using var req = new UnityWebRequest(SupportCallUrl + callId + "/end", "PATCH");
+        // by=MR - 서버가 AR에 call_end를 보낸다(EndCallAsInitiator의 WS 전송이 끊겨 있어도 AR이 알 수 있게).
+        using var req = new UnityWebRequest(SupportCallUrl + callId + "/end?by=MR", "PATCH");
+        req.timeout = ServerConfig.RequestTimeout;
         req.downloadHandler = new DownloadHandlerBuffer();
         yield return req.SendWebRequest();
         if (req.result != UnityWebRequest.Result.Success)
@@ -667,7 +715,8 @@ public class MrCallDockPanel : MonoBehaviour
         spinnerTextGo.transform.SetParent(spinnerGo.transform, false);
         var spinnerText = spinnerTextGo.AddComponent<Text>();
         spinnerText.font = font; spinnerText.fontSize = 31; spinnerText.color = MrUiTheme.InkDim;
-        spinnerText.text = "연결 대기 중";
+        spinnerText.text = DefaultConnectingText;
+        connectingText = spinnerText;
         spinnerText.alignment = TextAnchor.MiddleCenter;
         var spinnerTextRect = spinnerText.rectTransform;
         spinnerTextRect.anchorMin = Vector2.zero; spinnerTextRect.anchorMax = Vector2.one;

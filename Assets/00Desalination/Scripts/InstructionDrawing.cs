@@ -335,6 +335,7 @@ public class InstructionDrawing : MonoBehaviour,
         form.AddBinaryData("file", pngData, $"instruction_{System.DateTime.Now:yyyyMMdd_HHmmss}.png", "image/png");
 
         using var req = UnityWebRequest.Post(serverUrl, form);
+        req.timeout = ServerConfig.LongRequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result == UnityWebRequest.Result.Success)

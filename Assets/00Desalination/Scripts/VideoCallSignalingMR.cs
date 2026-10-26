@@ -1,5 +1,5 @@
 using System;
-using System.Threading;
+using System.Collections.Concurrent;
 using UnityEngine;
 using WebSocketSharp;
 using Newtonsoft.Json;
@@ -33,8 +33,17 @@ public class VideoCallSignalingMR : MonoBehaviour
     }
 
     private WebSocketSharp.WebSocket _ws;
-    private CallSignalMessage _pendingMessage = null;
-    private readonly object _lockObj = new object();
+
+    // 2026-10-23: 예전엔 메시지 종류마다 보관 칸이 하나뿐이라(_pendingMessage 등), 같은 종류가 한 프레임에
+    // 두 개 오면(call_response 직후 call_end, 지원요청 연달아 등) 앞의 것이 덮어써져 사라졌다. 수신 스레드가
+    // 받은 순서대로 큐에 넣고, Update(메인 스레드)에서 전부 꺼내 순서대로 처리한다.
+    private readonly ConcurrentQueue<CallSignalMessage> _inbox = new ConcurrentQueue<CallSignalMessage>();
+
+    // 2026-10-23: 예전엔 시작할 때 한 번만 연결해서, 서버 재시작/와이파이 끊김으로 끊기면 앱을 다시 켤 때까지
+    // AR의 통화 종료·지원요청·작업종료 신호를 못 받았다(도크가 열린 채 남음). AlarmWebSocket과 같은 방식으로
+    // 끊겨 있으면 Update에서 3초마다 다시 연결한다. 끊겨 있던 동안 온 메시지는 서버가 다시 보내주지 않는다.
+    const float ReconnectInterval = 3f;
+    float _nextReconnectAt;
 
     // 싱글톤
     void Awake()
@@ -73,30 +82,7 @@ public class VideoCallSignalingMR : MonoBehaviour
                 Debug.Log("[CallWS-MR] 수신: " + e.Data);
 
                 var msg = JsonConvert.DeserializeObject<CallSignalMessage>(e.Data);
-                if (msg != null && (msg.type == "call_response" || msg.type == "call_end"))
-                {
-                    lock (_lockObj) { _pendingMessage = msg; }
-                }
-                else if (msg != null && msg.type == "guide_step_control")
-                {
-                    lock (_lockObj) { _pendingGuideStepMessage = msg; }
-                }
-                else if (msg != null && msg.type == "maintenance_complete")
-                {
-                    lock (_lockObj) { _pendingMaintenanceComplete = true; }
-                }
-                else if (msg != null && msg.type == "ar_location")
-                {
-                    lock (_lockObj) { _pendingArLocation = msg.equipmentId; }
-                }
-                else if (msg != null && msg.type == "ar_pose")
-                {
-                    lock (_lockObj) { _pendingArPose = new Vector3(msg.poseX, msg.poseY, msg.poseZ); }
-                }
-                else if (msg != null && msg.type == "support_call_request" && !string.IsNullOrEmpty(msg.id))
-                {
-                    lock (_lockObj) { _pendingSupportCallRequestId = msg.id; }
-                }
+                if (msg != null) _inbox.Enqueue(msg); // 종류 판별/발화는 Update(메인 스레드)에서
             }
             catch (Exception ex)
             {
@@ -109,49 +95,47 @@ public class VideoCallSignalingMR : MonoBehaviour
 
     void Update()
     {
-        lock (_lockObj)
+        if (_ws != null && _ws.ReadyState == WebSocketState.Closed && Time.unscaledTime >= _nextReconnectAt)
         {
-            if (_pendingMessage != null)
-            {
-                if (_pendingMessage.type == "call_end")
-                    OnCallEnded?.Invoke(_pendingMessage.channelName);
-                else if (_pendingMessage.accepted)
-                    OnCallAccepted?.Invoke(_pendingMessage.channelName);
-                else
-                    OnCallRejected?.Invoke(_pendingMessage.channelName);
+            _nextReconnectAt = Time.unscaledTime + ReconnectInterval;
+            Debug.Log("[CallWS-MR] 연결 끊김 - 다시 연결 시도");
+            Connect();
+        }
 
-                _pendingMessage = null;
-            }
+        while (_inbox.TryDequeue(out var msg))
+        {
+            // 구독자 하나가 예외를 던져도 나머지 메시지 처리는 계속되게 한다.
+            try { Dispatch(msg); }
+            catch (Exception ex) { Debug.LogException(ex); }
+        }
+    }
 
-            if (_pendingGuideStepMessage != null)
-            {
-                OnGuideStepControlReceived?.Invoke(_pendingGuideStepMessage.stepIndex, _pendingGuideStepMessage.stepCount);
-                _pendingGuideStepMessage = null;
-            }
-
-            if (_pendingMaintenanceComplete)
-            {
+    void Dispatch(CallSignalMessage msg)
+    {
+        switch (msg.type)
+        {
+            case "call_response":
+                if (msg.accepted) OnCallAccepted?.Invoke(msg.channelName);
+                else OnCallRejected?.Invoke(msg.channelName);
+                break;
+            case "call_end":
+                OnCallEnded?.Invoke(msg.channelName);
+                break;
+            case "guide_step_control":
+                OnGuideStepControlReceived?.Invoke(msg.stepIndex, msg.stepCount);
+                break;
+            case "maintenance_complete":
                 OnMaintenanceComplete?.Invoke();
-                _pendingMaintenanceComplete = false;
-            }
-
-            if (_pendingArLocation != null)
-            {
-                OnArLocationReceived?.Invoke(_pendingArLocation);
-                _pendingArLocation = null;
-            }
-
-            if (_pendingArPose.HasValue)
-            {
-                OnArPoseReceived?.Invoke(_pendingArPose.Value);
-                _pendingArPose = null;
-            }
-
-            if (_pendingSupportCallRequestId != null)
-            {
-                OnSupportCallRequested?.Invoke(_pendingSupportCallRequestId);
-                _pendingSupportCallRequestId = null;
-            }
+                break;
+            case "ar_location":
+                OnArLocationReceived?.Invoke(msg.equipmentId);
+                break;
+            case "ar_pose":
+                OnArPoseReceived?.Invoke(new Vector3(msg.poseX, msg.poseY, msg.poseZ));
+                break;
+            case "support_call_request":
+                if (!string.IsNullOrEmpty(msg.id)) OnSupportCallRequested?.Invoke(msg.id);
+                break;
         }
     }
 
@@ -186,28 +170,23 @@ public class VideoCallSignalingMR : MonoBehaviour
     // 구독해서 그대로 따라간다.)
     // ─────────────────────────────────────────────
     public static event Action<int, int> OnGuideStepControlReceived; // (stepIndex 1-based, stepCount)
-    private CallSignalMessage _pendingGuideStepMessage = null;
 
     // 2026-08-26: "AR에서 저장 완료하면 MR도 진행 패널을 종료하고 설비 깜빡임도 사라져야 해" -
-    // 통화 상태와 무관하게 항상 오는 신호라 별도 슬롯으로 둔다.
+    // 통화 상태와 무관하게 항상 오는 신호라 통화 이벤트와 별개로 둔다.
     public static event Action OnMaintenanceComplete;
-    private bool _pendingMaintenanceComplete = false;
 
     // 2026-09-15: AR이 QR로 설비를 인식할 때마다 보내는 위치 갱신 신호 (AR→MR, 통화 상태와
     // 무관하게 항상 전달). MR은 디지털 트윈에서 "AR 작업자 위치" 표시를 이 설비로 옮긴다.
     // AR쪽에서 보낼 메시지: { type: "ar_location", equipmentId: "<equipment.id uuid>" }
     public static event Action<string> OnArLocationReceived; // equipmentId
-    private string _pendingArLocation = null;
 
     // 2026-09-15: AR의 6DoF 카메라 로컬 좌표(AR 자체 좌표계) 스트리밍 수신. 트윈 좌표로 쓰려면
     // 가장 최근 OnArLocationReceived 시점의 로컬 좌표로 보정한 오프셋을 더해야 한다 - ArLocationSync 참고.
     public static event Action<Vector3> OnArPoseReceived; // AR 로컬 좌표 (보정 전)
-    private Vector3? _pendingArPose = null;
 
     // 2026-10-20: AR이 원격지원을 요청하면 서버가 { type: "support_call_request", id } 를 MR에 보낸다 -
     // 예전엔 무시하고 목록을 열어야만 알 수 있었다. SupportCallRequestAlert가 구독해서 알림 팝업을 띄운다.
     public static event Action<string> OnSupportCallRequested; // remote_support.id
-    private string _pendingSupportCallRequestId = null;
 
     [Header("디버그/테스트용 (AR 없이 확인할 때만 사용, 안 쓰면 비워둬도 됨)")]
     [Tooltip("씬의 EquipmentMarker 중 하나에 적힌 equipmentId를 그대로 복사해서 넣고, " +

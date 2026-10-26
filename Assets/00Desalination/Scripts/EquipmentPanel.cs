@@ -98,6 +98,7 @@ public class EquipmentPanel : MonoBehaviour
     {
         string url = $"{serverUrl}/{uuid}";
         using var req = UnityWebRequest.Get(url);
+        req.timeout = ServerConfig.RequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result != UnityWebRequest.Result.Success)
@@ -131,6 +132,7 @@ public class EquipmentPanel : MonoBehaviour
     {
         string url = $"{sensorServerUrl}/{uuid}/sensors";
         using var req = UnityWebRequest.Get(url);
+        req.timeout = ServerConfig.RequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result != UnityWebRequest.Result.Success)

@@ -40,6 +40,7 @@ public class InfoShareManager : MonoBehaviour
     {
         string url = string.IsNullOrEmpty(type) ? serverUrl : $"{serverUrl}?type={type}";
         using var req = UnityWebRequest.Get(url);
+        req.timeout = ServerConfig.LongRequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result != UnityWebRequest.Result.Success)
@@ -90,6 +91,7 @@ public class InfoShareManager : MonoBehaviour
     private IEnumerator LoadImage(string url, FileIconItem icon)
     {
         using var req = UnityWebRequestTexture.GetTexture(url);
+        req.timeout = ServerConfig.LongRequestTimeout;
         yield return req.SendWebRequest();
 
         if (req.result != UnityWebRequest.Result.Success)

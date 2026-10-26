@@ -35,8 +35,12 @@ public class SupportCallRequestAlert : MonoBehaviour
     AudioClip ringClip;
     Coroutine showRoutine;
 
+    // 다른 화면에서 같은 모양의 알림을 띄울 때 쓴다(예: 통화 중 다른 지원요청 수락 차단 - SupportCallList).
+    public static SupportCallRequestAlert Instance { get; private set; }
+
     void Awake()
     {
+        Instance = this;
         BuildUI();
         canvasGo.SetActive(false);
 
@@ -69,6 +73,7 @@ public class SupportCallRequestAlert : MonoBehaviour
         SupportCallData data = null;
         using (var req = UnityWebRequest.Get(SupportCallUrl + callId))
         {
+            req.timeout = ServerConfig.RequestTimeout;
             yield return req.SendWebRequest();
             if (req.result == UnityWebRequest.Result.Success)
             {
