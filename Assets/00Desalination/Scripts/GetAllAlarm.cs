@@ -9,81 +9,81 @@ public class GetAllAlarm : MonoBehaviour
 {
     public string serverUrl => ServerConfig.BaseUrl + "/api/alarms";
 
-    [Header("��")]
+    [Header("탭")]
     public bool activeOnly = false;
 
-    [Header("������ ������ & �θ� ������Ʈ")]
-    public GameObject alarmItemPrefab;  // �˶�����Ʈ(1) ������
-    public Transform itemContainer;     // �����۵��� �� �θ� ������Ʈ
+    [Header("아이템 프리팹 & 부모 오브젝트")]
+    public GameObject alarmItemPrefab;  // 알람리스트(1) 프리팹
+    public Transform itemContainer;     // 아이템들이 들어갈 부모 오브젝트
 
-    [Header("������ ��ư")]
+    [Header("서버 주소")]
     public Button prevButton;
     public Button nextButton;
 
-    [Header("������ ǥ�� �ؽ�Ʈ (����)")]
+    [Header("페이지 표시 텍스트 (선택)")]
     public TMP_Text pageText;
 
     
-    private List<AlarmData> _alarms = new List<AlarmData>(); // DB�� �ִ� �˶� ����Ʈ
-    private int _currentPage = 0; // ���� ������
-    private const int ITEMS_PER_PAGE = 4; // �������� �׸�� 4
+    private List<AlarmData> _alarms = new List<AlarmData>(); // DB에 있는 알람 리스트
+    private int _currentPage = 0; // 현재 페이지
+    private const int ITEMS_PER_PAGE = 4; // 페이지당 항목수 4
 
-    // �гο� ���� ��ũ��Ʈ�ϱ�, �г��� ������ �ڷ�ƾ�� �����
+    // 패널에 붙인 스크립트니까, 패널이 켜지면 코루틴이 실행됨
     void OnEnable()
     {
         StartCoroutine(FetchAlarms());
     }
 
-    // ���ΰ�ħ ��ư ��������, �ڷ�ƾ�� �����
+    // 새로고침 버튼 누를때도, 코루틴이 실행됨
     public void OnRefreshButton()
     {
         StartCoroutine(FetchAlarms());
     }
 
-    // �������� �˶� ��� ��ȸ
+    // 서버에서 알람 목록 조회
     public IEnumerator FetchAlarms()
     {
-        // ���� url
+        // 서버 url
         string url = activeOnly ? serverUrl + "?active=true" : serverUrl;
 
-        // ���� url �� get ��û
+        // 서버 url 로 get 요청
         using (UnityWebRequest req = UnityWebRequest.Get(url))
         {
             req.timeout = ServerConfig.RequestTimeout;
-            // ��û�� ������ ����
+            // 요청을 서버로 보냄
             yield return req.SendWebRequest();
 
             if (req.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError("[GetAllAlarm] ��û ����: " + req.error);
+                Debug.LogError("[GetAllAlarm] 요청 실패: " + req.error);
                 yield break;
             }
 
-            // get��û �ؼ� �޾ƿ� ��� �˶� �����͸� JSON -> AlarmListResponse �� ��ȯ��
+            // get요청 해서 받아온 모든 알람 데이터를 JSON -> AlarmListResponse 로 변환함
             AlarmListResponse response = JsonUtility.FromJson<AlarmListResponse>(req.downloadHandler.text);
 
             if (response == null || !response.success)
             {
-                Debug.LogError("[GetAllAlarm] ���� �Ľ� ����");
+                Debug.LogError("[GetAllAlarm] 응답 파싱 실패");
                 yield break;
             }
 
-            // alarms �� response�� data
+            // alarms 는 response의 data
             _alarms = response.data;
-            _currentPage = 0; // ���� ������ 0���� �����ϰ� ������ �������ϱ�
+            _currentPage = 0; // 현재 페이지 0으로 설정하고 페이지 렌더링하기
             RenderPage();
         }
     }
 
 
-    // ���� ������ ������
+    // 현재 페이지 렌더링
     void RenderPage()
     {
-        // ���� ������ ��� ����
+        // 기존 아이템 모두 제거
         foreach (Transform child in itemContainer)
             Destroy(child.gameObject);
 
-        // ���� �������� �ش��ϴ� �˶� �����̽�
+        // 현재 페이지에 해당하는 알람 슬라이스
         int startIndex = _currentPage * ITEMS_PER_PAGE;
         int endIndex = Mathf.Min(startIndex + ITEMS_PER_PAGE, _alarms.Count);
 
@@ -92,54 +92,54 @@ public class GetAllAlarm : MonoBehaviour
         {
             AlarmData alarm = _alarms[i];
 
-            // itemContainer �ȿ� alarmItemPrefab�� ����
+            // itemContainer 안에 alarmItemPrefab을 생성
             GameObject item = Instantiate(alarmItemPrefab, itemContainer);
 
-            // alarmItemPrefab�� alarmItemUI ��ũ��Ʈ�� ã��
+            // alarmItemPrefab에 alarmItemUI 스크립트를 찾음
             AlarmItemUI itemUI = item.GetComponent<AlarmItemUI>();
 
             if (itemUI != null)
-                itemUI.SetData(alarm); // alarmItemUI ��ũ��Ʈ�� SetData �Լ��� alarm ���� alarm �� ����
+                itemUI.SetData(alarm); // alarmItemUI 스크립트의 SetData 함수에 alarm 현재 alarm 을 전달
         }
 
-        // ��ư Ȱ��ȭ ����
+        // 버튼 활성화 여부
         int totalPages = Mathf.CeilToInt((float)_alarms.Count / ITEMS_PER_PAGE);
         prevButton.interactable = _currentPage > 0;
         nextButton.interactable = _currentPage < totalPages - 1;
 
-        // ������ �ؽ�Ʈ (����)
+        // 페이지 텍스트 (선택)
         if (pageText != null)
-            pageText.text = _alarms.Count == 0 ? "�˶� ����" : $"{_currentPage + 1} / {totalPages}";
+            pageText.text = _alarms.Count == 0 ? "알람 없음" : $"{_currentPage + 1} / {totalPages}";
     }
     
 
-    // < ��ư(����)
+    // < 버튼(이전)
     public void OnPrevPage()
     {
-        // ���� �������� 0���� ũ��
+        // 현재 페이지가 0보다 크면
         if (_currentPage > 0)
         {
-            // �� ������ -1
+            // 현 페이지 -1
             _currentPage--;
             RenderPage();
         }
     }
 
-    // > ��ư(����)
+    // > 버튼(다음)
     public void OnNextPage()
     {
-        // �� �˶��� /4 = ��� ��������
+        // 총 알람수 /4 = 모든 페이지수
         int totalPages = Mathf.CeilToInt((float)_alarms.Count / ITEMS_PER_PAGE);
-        if (_currentPage < totalPages - 1) // ���� �������� ��� ������-1 ���� ������
+        if (_currentPage < totalPages - 1) // 현재 페이지가 모든 페이지-1 보다 작으면
         {
-            // �� ������ +1
+            // 현 페이지 +1
             _currentPage++;
             RenderPage();
         }
     }
 }
 
-// ���� ���� ��ü�� ��� Ŭ����
+// 서버 응답 전체를 담는 클래스
 [System.Serializable]
 public class AlarmListResponse
 {
