@@ -74,6 +74,24 @@ public static class MrTestBridge
                 Call(dock, "OnCloseClicked");
                 return "도크 닫기 실행";
             }
+            case "alarm": // 고장예지 데모 알람(AlarmUI.TriggerDemoAlarm - 씬 버튼과 같은 경로)
+            {
+                var ui = UnityEngine.Object.FindFirstObjectByType<AlarmUI>(FindObjectsInactive.Include);
+                if (ui == null) return "AlarmUI 없음";
+                ui.TriggerDemoAlarm();
+                return "데모 알람 실행";
+            }
+            case "alert_primary": // 공용 알림의 오른쪽 버튼(예: 설비로 이동)
+            case "alert_close":
+            {
+                var alert = SupportCallRequestAlert.Instance;
+                if (alert == null) return "SupportCallRequestAlert 없음";
+                Call(alert, verb == "alert_primary" ? "OnPrimaryClicked" : "CloseSticky");
+                return verb + " 실행";
+            }
+            case "shot": // Game 뷰 스크린샷 → Temp/mr_shot.png
+                ScreenCapture.CaptureScreenshot(Path.Combine(Directory.GetCurrentDirectory(), "Temp", "mr_shot.png"));
+                return "스크린샷 저장 요청";
             case "status":
                 return $"IsInCall={MrCallDockPanel.IsInCall} CurrentSupportCallId={VideoCallSignalingMR.CurrentSupportCallId ?? "-"}";
             default:

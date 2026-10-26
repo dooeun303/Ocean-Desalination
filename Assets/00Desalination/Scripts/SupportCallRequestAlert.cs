@@ -1,16 +1,21 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR.Interaction.Toolkit.UI;
 
 // 2026-10-20: "AR에서 MR로 원격지원 요청이 오면 MR에 알림만 띄우고 3초 후 사라지게. 사용자는 그걸 보고
 // 메뉴에 들어가서 직접 원격지원을 확인할 거야" - 서버(support_call.js POST)가 MR에 보내는
 // { type: "support_call_request", id }를 VideoCallSignalingMR이 넘겨주면, 요청 상세(GET /api/support-calls/{id})로
 // 요청자·설비를 채워 눈앞에 짧게 띄우고 알림음을 한 번 울린다. 버튼 없음 - 수락/거절은 원격지원 목록에서.
 // 씬에 따로 붙일 필요 없음(다른 MR HUD 패널처럼 스스로 생성).
+// 2026-10-26: "모든 알림을 이 방식으로" - 고장예지 알람(AlarmUI)도 같은 모양으로 띄운다. 알람은 버튼(설비로 이동/닫기)이
+// 있어서 ShowAction으로 띄우고, 누를 때까지 그 자리에 떠 있다(3초 알림이 그 사이에 오면 끝난 뒤 다시 보여줌).
 public class SupportCallRequestAlert : MonoBehaviour
 {
     const float PanelWidth = 620f;
     const float PanelHeight = 230f;
+    const float ActionPanelHeight = 420f; // 버튼이 있는 알림(고장예지 알람)
     const float ShowSeconds = 3f;
     const float FadeSeconds = 0.25f;
 
@@ -28,6 +33,13 @@ public class SupportCallRequestAlert : MonoBehaviour
     Text badgeText;
     Text titleText;
     Text bodyText;
+    Image barImage;
+    GameObject buttonRow;
+    Text primaryLabel;
+    Action primaryAction;
+    StickyAlert sticky;      // 버튼을 누를 때까지 떠 있는 알림(없으면 null)
+
+    class StickyAlert { public string badge, title, body, primary; public Color accent; public Action onPrimary; }
     AudioSource audioSource;
     AudioClip ringClip;
     Coroutine showRoutine;
@@ -85,12 +97,63 @@ public class SupportCallRequestAlert : MonoBehaviour
     // 알림 공통 - 띠 문구/제목/본문을 채우고 3초 띄운 뒤 사라진다. 알림음 한 번.
     public void ShowMessage(string badge, string title, string body)
     {
-        badgeText.text = badge;
-        titleText.text = title;
-        bodyText.text = body;
+        ApplyContent(badge, title, body, MrUiTheme.Accent, null);
         if (showRoutine != null) StopCoroutine(showRoutine);
         showRoutine = StartCoroutine(ShowForSeconds());
         audioSource.PlayOneShot(ringClip);
+    }
+
+    // 버튼이 있는 알림 - primary 버튼(예: 설비로 이동)이나 닫기를 누를 때까지 떠 있다.
+    // 머리를 따라다니면 버튼을 겨누기 어려워서, 나타날 때 한 번만 눈앞에 놓고 그 자리에 고정한다.
+    public void ShowAction(string badge, string title, string body, Color accent, string primary, Action onPrimary)
+    {
+        sticky = new StickyAlert { badge = badge, title = title, body = body, accent = accent, primary = primary, onPrimary = onPrimary };
+        if (showRoutine != null) { StopCoroutine(showRoutine); showRoutine = null; }
+        ShowSticky();
+        audioSource.PlayOneShot(ringClip);
+    }
+
+    void ShowSticky()
+    {
+        ApplyContent(sticky.badge, sticky.title, sticky.body, sticky.accent, sticky.primary);
+        primaryAction = sticky.onPrimary;
+        PlaceInFrontOfViewer();
+        canvasGo.SetActive(true);
+        group.alpha = 1f;
+        canvasGo.transform.localScale = Vector3.one * MrUiTheme.HudScale;
+    }
+
+    void CloseSticky()
+    {
+        sticky = null;
+        primaryAction = null;
+        canvasGo.SetActive(false);
+    }
+
+    void OnPrimaryClicked()
+    {
+        var action = primaryAction;
+        CloseSticky();
+        action?.Invoke();
+    }
+
+    // primary가 null이면 버튼 없는 3초 알림 모양, 있으면 버튼 줄을 보이고 패널을 키운다.
+    void ApplyContent(string badge, string title, string body, Color accent, string primary)
+    {
+        badgeText.text = badge;
+        titleText.text = title;
+        bodyText.text = body;
+        barImage.color = accent;
+
+        bool action = primary != null;
+        buttonRow.SetActive(action);
+        if (action) primaryLabel.text = primary;
+        group.interactable = action;
+        group.blocksRaycasts = action;
+        canvasGo.GetComponent<RectTransform>().sizeDelta = new Vector2(PanelWidth, action ? ActionPanelHeight : PanelHeight);
+        titleText.rectTransform.sizeDelta = new Vector2(-64f, action ? 80f : 42f);
+        bodyText.rectTransform.sizeDelta = new Vector2(-64f, action ? 130f : 80f);
+        bodyText.rectTransform.anchoredPosition = new Vector2(0f, action ? -168f : -130f);
     }
 
     // 눈앞에 나타났다가(페이드+살짝 커짐) ShowSeconds 뒤 페이드아웃.
@@ -119,12 +182,15 @@ public class SupportCallRequestAlert : MonoBehaviour
         }
         canvasGo.SetActive(false);
         showRoutine = null;
+
+        // 3초 알림이 떠 있던 알람을 가렸으면 다시 보여준다.
+        if (sticky != null) ShowSticky();
     }
 
-    // 떠 있는 3초 동안은 머리를 따라 움직인다(고개를 돌려도 보이게).
+    // 떠 있는 3초 동안은 머리를 따라 움직인다(고개를 돌려도 보이게). 버튼 알림은 고정.
     void LateUpdate()
     {
-        if (canvasGo.activeSelf) PlaceInFrontOfViewer();
+        if (canvasGo.activeSelf && showRoutine != null) PlaceInFrontOfViewer();
     }
 
     // 시선의 수평 방향 앞쪽, 눈높이보다 살짝 위. 패널 앞면이 사용자를 향하게.
@@ -154,6 +220,15 @@ public class SupportCallRequestAlert : MonoBehaviour
         HandleMaintenanceComplete();
     }
 
+    [ContextMenu("테스트: 버튼 알림(고장예지 알람 모양) 띄우기")]
+    void TestAction()
+    {
+        if (!Application.isPlaying) { Debug.LogWarning("[SupportCallAlert] Play 모드에서 실행하세요."); return; }
+        ShowAction("고장예지 알람 · 2026-10-26 15:30:00", "펌프 P-101의 고장예지 확률이 임계값을 초과하였습니다.",
+            "진동 및 온도 이상 패턴이 감지되어 고장 가능성이 높습니다.", MrUiTheme.Warn, "설비로 이동",
+            () => Debug.Log("[SupportCallAlert] 테스트: 설비로 이동 클릭"));
+    }
+
     // ───────────── UI ─────────────
 
     void BuildUI()
@@ -167,9 +242,11 @@ public class SupportCallRequestAlert : MonoBehaviour
         canvas.sortingOrder = 50; // 다른 HUD 패널보다 위
         canvasGo.GetComponent<RectTransform>().sizeDelta = new Vector2(PanelWidth, PanelHeight);
         canvasGo.transform.localScale = Vector3.one * MrUiTheme.HudScale;
+        canvasGo.AddComponent<GraphicRaycaster>();
+        canvasGo.AddComponent<TrackedDeviceGraphicRaycaster>(); // 버튼 알림을 XR 레이로 누르기 위해
         group = canvasGo.AddComponent<CanvasGroup>();
         group.interactable = false;
-        group.blocksRaycasts = false; // 알림만 - 레이를 가로막지 않음
+        group.blocksRaycasts = false; // 3초 알림은 레이를 가로막지 않음(버튼 알림일 때만 켬)
 
         var bg = canvasGo.AddComponent<Image>();
         bg.color = MrUiTheme.Panel;
@@ -179,9 +256,9 @@ public class SupportCallRequestAlert : MonoBehaviour
         bar.anchorMin = new Vector2(0f, 1f); bar.anchorMax = new Vector2(1f, 1f);
         bar.pivot = new Vector2(0.5f, 1f);
         bar.sizeDelta = new Vector2(0f, 60f);
-        var barImg = bar.gameObject.AddComponent<Image>();
-        barImg.color = MrUiTheme.Accent;
-        MrUiTheme.Round(barImg, 24);
+        barImage = bar.gameObject.AddComponent<Image>();
+        barImage.color = MrUiTheme.Accent;
+        MrUiTheme.Round(barImage, 24);
 
         badgeText = NewText("Badge", bar, font, 25, Color.white, TextAnchor.MiddleLeft);
         badgeText.text = "원격지원 요청";
@@ -190,6 +267,7 @@ public class SupportCallRequestAlert : MonoBehaviour
 
         titleText = NewText("Title", canvasGo.transform, font, 27, MrUiTheme.Ink, TextAnchor.UpperLeft);
         titleText.fontStyle = FontStyle.Bold;
+        titleText.horizontalOverflow = HorizontalWrapMode.Wrap;
         var tr = titleText.rectTransform;
         tr.anchorMin = new Vector2(0f, 1f); tr.anchorMax = new Vector2(1f, 1f);
         tr.pivot = new Vector2(0.5f, 1f);
@@ -204,6 +282,37 @@ public class SupportCallRequestAlert : MonoBehaviour
         br.pivot = new Vector2(0.5f, 1f);
         br.sizeDelta = new Vector2(-64f, 80f);
         br.anchoredPosition = new Vector2(0f, -130f);
+
+        // 버튼 줄(버튼 알림일 때만 보임) - 오른쪽 primary(포인트색), 왼쪽 닫기.
+        var row = NewRect("Buttons", canvasGo.transform);
+        row.anchorMin = new Vector2(0f, 0f); row.anchorMax = new Vector2(1f, 0f);
+        row.pivot = new Vector2(0.5f, 0f);
+        row.sizeDelta = new Vector2(-64f, 80f);
+        row.anchoredPosition = new Vector2(0f, 28f);
+        buttonRow = row.gameObject;
+        NewButton(row, font, "Close", "닫기", MrUiTheme.AccentSoft, MrUiTheme.Ink, new Vector2(0f, 0.5f), CloseSticky);
+        primaryLabel = NewButton(row, font, "Primary", "", MrUiTheme.Accent, Color.white, new Vector2(1f, 0.5f), OnPrimaryClicked);
+        buttonRow.SetActive(false);
+    }
+
+    // 버튼 줄의 왼쪽/오른쪽 끝(anchorX 0 또는 1)에 붙는 둥근 버튼. 라벨 Text를 돌려준다.
+    static Text NewButton(Transform parent, Font font, string name, string label, Color bg, Color fg, Vector2 anchor,
+        UnityEngine.Events.UnityAction onClick)
+    {
+        var rt = NewRect(name, parent);
+        rt.anchorMin = anchor; rt.anchorMax = anchor; rt.pivot = anchor;
+        rt.sizeDelta = new Vector2(266f, 80f);
+        var img = rt.gameObject.AddComponent<Image>();
+        img.color = bg;
+        MrUiTheme.Round(img, 16);
+        var btn = rt.gameObject.AddComponent<Button>();
+        btn.targetGraphic = img;
+        btn.onClick.AddListener(onClick);
+        var text = NewText("Label", rt, font, 27, fg, TextAnchor.MiddleCenter);
+        text.text = label;
+        text.fontStyle = FontStyle.Bold;
+        Stretch(text.rectTransform, Vector2.zero, Vector2.zero);
+        return text;
     }
 
     static RectTransform NewRect(string name, Transform parent)

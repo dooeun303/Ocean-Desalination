@@ -67,19 +67,28 @@ public class AlarmUI : MonoBehaviour
             System.Globalization.DateTimeStyles.RoundtripKind, out var parsedTime)
             ? parsedTime.ToString("yyyy-MM-dd HH:mm:ss")
             : alarm.triggered_at;
-        timeText.text = formattedTime;
-        titleText.text = $"{alarm.equipment?.name}의 고장예지 확률이 임계값을 초과하였습니다.";
-        descText.text = alarm.description;
-
         // severity 에 따라 색상 변경 (serverity 의 종류에 따라 색상변경)
-        severityBar.color = alarm.severity switch
+        Color severityColor = alarm.severity switch
         {
             "critical" => new Color(0.9f, 0.1f, 0.1f),   // 빨강
             "warning" => new Color(1f, 0.5f, 0f),     // 주황
             _ => new Color(1f, 0.9f, 0f),     // 노랑 (info)
         };
 
-        // 팝업 표시
+        // 2026-10-26: "모든 알림을 화상통화 요청 알림처럼" - 씬의 팝업 프리팹(popupPanel) 대신 눈앞에 뜨는 공용 HUD 알림으로
+        // 띄운다. 띠 색이 심각도, 버튼은 설비로 이동/닫기(누를 때까지 떠 있음). 공용 알림이 없을 때만 예전 팝업을 쓴다.
+        string title = $"{alarm.equipment?.name}의 고장예지 확률이 임계값을 초과하였습니다.";
+        if (SupportCallRequestAlert.Instance != null)
+        {
+            SupportCallRequestAlert.Instance.ShowAction($"고장예지 알람 · {formattedTime}", title, alarm.description,
+                severityColor, "설비로 이동", OnMoveToEquipment);
+            return;
+        }
+
+        timeText.text = formattedTime;
+        titleText.text = title;
+        descText.text = alarm.description;
+        severityBar.color = severityColor;
         popupPanel.SetActive(true);
 
         //// 5초 후 자동 닫기
