@@ -16,7 +16,7 @@ public class GetAllAlarm : MonoBehaviour
     public GameObject alarmItemPrefab;  // 알람리스트(1) 프리팹
     public Transform itemContainer;     // 아이템들이 들어갈 부모 오브젝트
 
-    [Header("서버 주소")]
+    [Header("페이지 버튼")]
     public Button prevButton;
     public Button nextButton;
 

@@ -10,7 +10,7 @@ public class AudioRecorder : MonoBehaviour
 
     public string serverUrl => ServerConfig.BaseUrl + "/api/ai/voice-summary";
 
-    [Header("서버 주소")]
+    [Header("녹음 설정")]
     public int sampleRate = 16000;   // Whisper 권장 샘플레이트
     public int maxDuration = 500;    // 최대 녹음 시간 (초)
 
