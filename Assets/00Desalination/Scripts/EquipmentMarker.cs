@@ -59,22 +59,6 @@ public class EquipmentMarker : MonoBehaviour
     Coroutine _pulseCo;
     Outline _outline;
 
-    // 2026-09-15: equipmentId → 마커 조회용 레지스트리. ArLocationSync 가 AR의 ar_location
-    // 메시지(equipmentId)로 어떤 마커를 표시할지 찾을 때 씀. 씬에 존재하는 마커만 등록됨.
-    static readonly Dictionary<string, EquipmentMarker> _byEquipmentId = new Dictionary<string, EquipmentMarker>();
-
-    public static EquipmentMarker Find(string equipmentId)
-    {
-        if (string.IsNullOrEmpty(equipmentId)) return null;
-        _byEquipmentId.TryGetValue(equipmentId, out var marker);
-        return marker;
-    }
-
-    void OnEnable()
-    {
-        if (!string.IsNullOrEmpty(equipmentId)) _byEquipmentId[equipmentId] = this;
-    }
-
     // 2026-10-21: "공정정보 조회 패널은 그랩이 안돼?" - 설비(pump1)의 XRSimpleInteractable은 Colliders 목록이
     // 비어 있어서 자식 Collider를 전부 자기 것으로 가져가는데, 정보 패널이 그 자식이라 패널의 잡기용
     // BoxCollider까지 설비가 가져갔다(콘솔: "collider ... will remain associated with pump1").
@@ -122,130 +106,6 @@ public class EquipmentMarker : MonoBehaviour
         Vector3 dir = Vector3.ProjectOnPlane(point.forward, Vector3.up);
         if (dir.sqrMagnitude < 0.01f) dir = Vector3.ProjectOnPlane(point.up, Vector3.up);
         return dir.sqrMagnitude < 0.0001f ? Quaternion.identity : Quaternion.LookRotation(dir.normalized, Vector3.up);
-    }
-
-    // AR 위치 표시 - Highlight()(알람/유지보수용, 전역 슬롯 1개)와는 별개의 슬롯이라 동시에 떠 있어도
-    // 서로 안 끈다. 외곽선 없이 얇은 링만 띄워서 시각적으로도 구분되게 한다.
-    public static EquipmentMarker CurrentlyArLocated { get; private set; }
-    [Header("AR 위치 표시")]
-    public Color arLocationRingColor = new Color(1f, 0.55f, 0.1f, 1f); // 주황 - Highlight 기본색(파랑)과 구분
-    public float arLocationRingRadius = 0.5f;
-    LineRenderer _arRing;
-    Coroutine _arPulseCo;
-    Transform _arFigure; // 링 위에 뜨는 간이 사람 모형 (캡슐 몸통 + 구 머리)
-    [Tooltip("사람 모형이 링 위로 뜨는 높이(m)")]
-    public float arFigureHeight = 1.6f;
-
-    public void ShowArLocation()
-    {
-        if (CurrentlyArLocated != null && CurrentlyArLocated != this)
-            CurrentlyArLocated.HideArLocation();
-
-        CurrentlyArLocated = this;
-
-        Vector3 groundCenter;
-        if (_arRing == null)
-        {
-            Transform root = highlightTarget != null ? highlightTarget : transform;
-            groundCenter = ringAnchor != null
-                ? ringAnchor.position + new Vector3(0f, 0.02f, 0f)
-                : root.position + new Vector3(0f, 0.02f, 0f);
-
-            var ringGo = new GameObject("ArLocationRing");
-            ringGo.transform.position = groundCenter;
-            ringGo.transform.rotation = Quaternion.identity;
-            _arRing = ringGo.AddComponent<LineRenderer>();
-            _arRing.useWorldSpace = false;
-            _arRing.loop = true;
-            _arRing.widthMultiplier = Mathf.Clamp(arLocationRingRadius * 0.04f, 0.015f, 0.05f);
-            _arRing.numCornerVertices = 2;
-            _arRing.material = new Material(Shader.Find("Sprites/Default"));
-            _arRing.startColor = _arRing.endColor = arLocationRingColor;
-            const int seg = 48;
-            _arRing.positionCount = seg;
-            for (int i = 0; i < seg; i++)
-            {
-                float a = (i / (float)seg) * Mathf.PI * 2f;
-                _arRing.SetPosition(i, new Vector3(Mathf.Cos(a) * arLocationRingRadius, 0f, Mathf.Sin(a) * arLocationRingRadius));
-            }
-        }
-        else
-        {
-            groundCenter = _arRing.transform.position;
-        }
-
-        if (_arFigure == null)
-        {
-            _arFigure = BuildSimpleFigure(arLocationRingColor).transform;
-            _arFigure.SetPositionAndRotation(groundCenter + Vector3.up * arFigureHeight, Quaternion.identity);
-        }
-
-        _arPulseCo = StartCoroutine(ArPulse());
-    }
-
-    public void HideArLocation()
-    {
-        if (CurrentlyArLocated == this) CurrentlyArLocated = null;
-        if (_arPulseCo != null) { StopCoroutine(_arPulseCo); _arPulseCo = null; }
-        if (_arRing != null) { Destroy(_arRing.gameObject); _arRing = null; }
-        if (_arFigure != null) { Destroy(_arFigure.gameObject); _arFigure = null; }
-    }
-
-    // 캡슐 몸통 + 구 머리로 만든 최소한의 "사람" 실루엣. 별도 에셋 없이 원기둥/구만으로 어느
-    // 각도에서 봐도 사람인지 알아볼 수 있는 정도로만 - 정교한 아바타가 필요해지면 교체.
-    public static GameObject BuildSimpleFigure(Color color)
-    {
-        var root = new GameObject("ArLocationFigure");
-        // URP 프로젝트라 Standard 셰이더는 분홍색으로 깨진다. URP Unlit을 우선 쓰고,
-        // 혹시 몰라 못 찾으면 Standard로 폴백(빌트인 파이프라인 환경 대비).
-        Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Standard");
-        var mat = new Material(shader) { color = color };
-
-        var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        body.name = "Body";
-        Destroy(body.GetComponent<Collider>());
-        body.transform.SetParent(root.transform, false);
-        body.transform.localPosition = new Vector3(0f, -0.05f, 0f);
-        body.transform.localScale = new Vector3(0.22f, 0.22f, 0.22f);
-        body.GetComponent<Renderer>().sharedMaterial = mat;
-
-        var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        head.name = "Head";
-        Destroy(head.GetComponent<Collider>());
-        head.transform.SetParent(root.transform, false);
-        head.transform.localPosition = new Vector3(0f, 0.32f, 0f);
-        head.transform.localScale = new Vector3(0.16f, 0.16f, 0.16f);
-        head.GetComponent<Renderer>().sharedMaterial = mat;
-
-        return root;
-    }
-
-    IEnumerator ArPulse()
-    {
-        float t = 0f;
-        while (_arRing != null || _arFigure != null)
-        {
-            t += Time.deltaTime;
-            float wave = 0.5f + 0.5f * Mathf.Sin(t * 2.0f);
-
-            if (_arRing != null)
-            {
-                _arRing.transform.localScale = Vector3.one * (1f + 0.05f * Mathf.Sin(t * 2.0f));
-                var c = arLocationRingColor; c.a = 0.5f + 0.5f * wave;
-                _arRing.startColor = _arRing.endColor = c;
-            }
-
-            if (_arFigure != null)
-            {
-                // 위아래로 은은하게 까딱거리면서 천천히 제자리 회전 - 어느 각도서든 눈에 띄게
-                float bob = Mathf.Sin(t * 1.5f) * 0.05f;
-                var basePos = _arRing != null ? _arRing.transform.position : _arFigure.position;
-                _arFigure.position = basePos + Vector3.up * (arFigureHeight + bob);
-                _arFigure.Rotate(Vector3.up, 30f * Time.deltaTime, Space.World);
-            }
-
-            yield return null;
-        }
     }
 
     // 2026-09-03: 설비 외곽선 - Quick Outline(Asset) 컴포넌트를 하이라이트 동안 붙였다 제거 + 바닥 링 펄스.
@@ -366,10 +226,6 @@ public class EquipmentMarker : MonoBehaviour
     void OnDisable()
     {
         if (_highlighting) StopHighlight();
-        if (CurrentlyArLocated == this) HideArLocation();
-
-        if (!string.IsNullOrEmpty(equipmentId) && _byEquipmentId.TryGetValue(equipmentId, out var cur) && cur == this)
-            _byEquipmentId.Remove(equipmentId);
     }
 
     // ── 설비 정보 패널 ──

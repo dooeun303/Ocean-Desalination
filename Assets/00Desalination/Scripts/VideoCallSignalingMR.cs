@@ -127,12 +127,6 @@ public class VideoCallSignalingMR : MonoBehaviour
             case WsMessageType.MaintenanceComplete:
                 OnMaintenanceComplete?.Invoke();
                 break;
-            case WsMessageType.ArLocation:
-                OnArLocationReceived?.Invoke(msg.equipmentId);
-                break;
-            case WsMessageType.ArPose:
-                OnArPoseReceived?.Invoke(new Vector3(msg.poseX, msg.poseY, msg.poseZ));
-                break;
             case WsMessageType.SupportCallRequest:
                 if (!string.IsNullOrEmpty(msg.id)) OnSupportCallRequested?.Invoke(msg.id);
                 break;
@@ -175,51 +169,9 @@ public class VideoCallSignalingMR : MonoBehaviour
     // 통화 상태와 무관하게 항상 오는 신호라 통화 이벤트와 별개로 둔다.
     public static event Action OnMaintenanceComplete;
 
-    // 2026-09-15: AR이 QR로 설비를 인식할 때마다 보내는 위치 갱신 신호 (AR→MR, 통화 상태와
-    // 무관하게 항상 전달). MR은 디지털 트윈에서 "AR 작업자 위치" 표시를 이 설비로 옮긴다.
-    // AR쪽에서 보낼 메시지: { type: "ar_location", equipmentId: "<equipment.id uuid>" }
-    public static event Action<string> OnArLocationReceived; // equipmentId
-
-    // 2026-09-15: AR의 6DoF 카메라 로컬 좌표(AR 자체 좌표계) 스트리밍 수신. 트윈 좌표로 쓰려면
-    // 가장 최근 OnArLocationReceived 시점의 로컬 좌표로 보정한 오프셋을 더해야 한다 - ArLocationSync 참고.
-    public static event Action<Vector3> OnArPoseReceived; // AR 로컬 좌표 (보정 전)
-
     // 2026-10-20: AR이 원격지원을 요청하면 서버가 { type: "support_call_request", id } 를 MR에 보낸다 -
     // 예전엔 무시하고 목록을 열어야만 알 수 있었다. SupportCallRequestAlert가 구독해서 알림 팝업을 띄운다.
     public static event Action<string> OnSupportCallRequested; // remote_support.id
-
-    [Header("디버그/테스트용 (AR 없이 확인할 때만 사용, 안 쓰면 비워둬도 됨)")]
-    [Tooltip("씬의 EquipmentMarker 중 하나에 적힌 equipmentId를 그대로 복사해서 넣고, " +
-             "Play 모드에서 이 컴포넌트를 선택한 뒤 우클릭 → '테스트: AR 위치 시뮬레이션' 실행")]
-    [SerializeField] private string debugTestEquipmentId;
-
-    [ContextMenu("테스트: AR 위치 시뮬레이션")]
-    private void DebugSimulateArLocation()
-    {
-        if (string.IsNullOrEmpty(debugTestEquipmentId))
-        {
-            Debug.LogWarning("[CallWS-MR] debugTestEquipmentId가 비어있습니다. EquipmentMarker의 equipmentId 값을 복사해서 넣으세요.");
-            return;
-        }
-
-        Debug.Log("[CallWS-MR] AR 위치 시뮬레이션: " + debugTestEquipmentId);
-        // 보정에 필요한 "그 순간 AR 로컬 좌표"도 같이 보내줘야 ArLocationSync가 오프셋을 계산할 수 있다.
-        // 실기기라면 이미 ar_pose가 흘러들어오고 있겠지만, 디버그로는 걸음 시뮬레이션 원점(0,0,0)을 씀.
-        OnArPoseReceived?.Invoke(_debugArPoseWalk);
-        OnArLocationReceived?.Invoke(debugTestEquipmentId);
-    }
-
-    // 실시간 추적(ar_pose) 테스트용 - 실행할 때마다 로컬 좌표를 +1m씩 걸어가는 것처럼 흉내낸다.
-    // 순서: 1) 위 "AR 위치 시뮬레이션"으로 먼저 보정(0m 지점 = 그 설비 위치) → 2) 이걸 반복 실행.
-    private Vector3 _debugArPoseWalk = Vector3.zero;
-
-    [ContextMenu("테스트: AR 이동 시뮬레이션 (+1m)")]
-    private void DebugSimulateArPoseStep()
-    {
-        _debugArPoseWalk += new Vector3(1f, 0f, 0f);
-        Debug.Log("[CallWS-MR] AR 이동 시뮬레이션: " + _debugArPoseWalk);
-        OnArPoseReceived?.Invoke(_debugArPoseWalk);
-    }
 
     // ─────────────────────────────────────────────
     // 실시간 그리기: 새 선 시작 / 점 추가 / 선 끝 (LiveDrawOverlay에서 호출)
@@ -388,9 +340,5 @@ public class CallSignalMessage
     public bool exploded;       // model_explode 전용 - 분해도 펼침 여부
     public bool modelViewOpen;  // model_view 전용 - 3D 모델 창이 열렸는지
     public string modelUrl;     // model_view 전용 - open=true일 때 AR이 불러올 glb URL
-    public string equipmentId;  // ar_location 전용 - AR이 QR로 인식한 설비의 equipment.id (uuid)
     public string id;           // support_call_request 전용 - remote_support.id (서버 support_call.js POST가 보냄)
-    public float poseX;         // ar_pose 전용 - AR 6DoF 카메라 로컬 좌표 (AR 자체 좌표계, 트윈 좌표 아님)
-    public float poseY;         // ar_pose 전용
-    public float poseZ;         // ar_pose 전용
 }

@@ -27,10 +27,6 @@ public static class WsMessageType
     public const string ModelPoint = "model_point";     // { pointing, partName, pointX..Z, normX..Z }
     public const string ModelExplode = "model_explode"; // { exploded }
 
-    // AR 작업자 위치(AR→MR) - MR 쪽 표시(ArLocationSync)는 현재 씬에 연결돼 있지 않음
-    public const string ArLocation = "ar_location";     // { equipmentId }
-    public const string ArPose = "ar_pose";             // { poseX, poseY, poseZ } AR 로컬 좌표
-
     // 고장예지 알람(서버→MR/AR)
     public const string Alarm = "ALARM";
 }
