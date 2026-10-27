@@ -105,6 +105,14 @@ public static class MrTestBridge
                 list.StartCoroutine((System.Collections.IEnumerator)m.Invoke(list, new object[] { data }));
                 return "도착 실행: " + arg;
             }
+            case "select": // 설비를 컨트롤러로 처음 선택했을 때와 같은 이벤트(First Select Entered) 실행 - 인자: 마커 이름
+            {
+                var marker = UnityEngine.Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault(m => m.name == arg);
+                var it = marker != null ? marker.GetComponent<UnityEngine.XR.Interaction.Toolkit.XRSimpleInteractable>() : null;
+                if (it == null) return "선택 가능한 설비 아님: " + arg;
+                it.firstSelectEntered.Invoke(new UnityEngine.XR.Interaction.Toolkit.SelectEnterEventArgs());
+                return "선택 이벤트 실행: " + arg;
+            }
             case "result_close": // 통화 종료 때 뜨는 "원격지원 결과" 패널 닫기
             {
                 var panel = UnityEngine.Object.FindFirstObjectByType<RemoteSupportResultPanel>(FindObjectsInactive.Include);

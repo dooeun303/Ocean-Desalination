@@ -231,10 +231,23 @@ public class EquipmentMarker : MonoBehaviour
     // ── 설비 정보 패널 ──
     GameObject _resolvedPanel; // ShowInfo가 부모를 떼면 GetComponentInChildren로는 다시 못 찾으므로 캐시
     bool? _infoWasActive;      // ShowInfo 직전 패널 켜짐 상태 - HideInfo가 되돌린다
-    bool _infoHomeSaved;       // MoveInfoPanel 전 원래 자리
+    bool _infoHomeSaved;       // ShowInfo/MoveInfoPanel 전 원래 자리(부모·로컬 위치·회전·크기)
+    Transform _infoHomeParent;
     Vector3 _infoHomePos;
     Quaternion _infoHomeRot;
     Vector3 _infoHomeScale;
+
+    // 2026-10-27: 예전엔 MoveInfoPanel에서 위치·회전만 기억해서, ShowInfo가 부모를 떼고 Info Panel Scale(=1)로 키운 패널이
+    // 통화가 끝나도 부모 없이 1:1 크기로 남았다(맨 앞에 그리기 후 다음 선택 때 화면을 뒤덮음). 맨 처음 손대기 전에 한 번 기억한다.
+    void SaveInfoHome(GameObject p)
+    {
+        if (_infoHomeSaved) return;
+        _infoHomeParent = p.transform.parent;
+        _infoHomePos = p.transform.localPosition;
+        _infoHomeRot = p.transform.localRotation;
+        _infoHomeScale = p.transform.localScale;
+        _infoHomeSaved = true;
+    }
 
     GameObject ResolveInfoPanel()
     {
@@ -276,6 +289,7 @@ public class EquipmentMarker : MonoBehaviour
 
         // 부모를 떼서 월드에 고정(스틱 회전으로 Rig가 돌아도 패널은 안 따라감).
         // SetParent(null, true)는 월드 스케일을 그대로 보존한다 → 원래 보이던 크기 유지.
+        SaveInfoHome(p);
         p.transform.SetParent(null, true);
         if (infoPanelScale > 0f) p.transform.localScale = Vector3.one * infoPanelScale;
 
@@ -348,6 +362,7 @@ public class EquipmentMarker : MonoBehaviour
             MrUiOnTop.Restore(p);
             if (_infoHomeSaved)
             {
+                p.transform.SetParent(_infoHomeParent, false);
                 p.transform.localPosition = _infoHomePos;
                 p.transform.localRotation = _infoHomeRot;
                 p.transform.localScale = _infoHomeScale;
@@ -368,13 +383,7 @@ public class EquipmentMarker : MonoBehaviour
     {
         var p = ResolveInfoPanel();
         if (p == null) return;
-        if (!_infoHomeSaved)
-        {
-            _infoHomePos = p.transform.localPosition;
-            _infoHomeRot = p.transform.localRotation;
-            _infoHomeScale = p.transform.localScale;
-            _infoHomeSaved = true;
-        }
+        SaveInfoHome(p);
         if (worldWidth > 0f && p.transform is RectTransform rt)
         {
             var corners = new Vector3[4];

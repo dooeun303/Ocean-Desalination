@@ -107,6 +107,68 @@ public static class MrTeleportTools
         Debug.Log("[Attach] 씬 저장");
     }
 
+    // 설비 선택(클릭) 구성 - 콜라이더와 XRSimpleInteractable 이벤트 연결
+    public static void InteractReport()
+    {
+        EditorSceneManager.OpenScene(ScenePath);
+        foreach (var m in Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None).OrderBy(x => x.name))
+        {
+            var it = m.GetComponent<UnityEngine.XR.Interaction.Toolkit.XRSimpleInteractable>();
+            var col = m.GetComponent<Collider>();
+            string ev = "-";
+            if (it != null)
+            {
+                var so = new SerializedObject(it);
+                ev = string.Join(" ; ", new[] { "m_FirstSelectEntered" }.Select(p =>
+                {
+                    var calls = so.FindProperty(p + ".m_PersistentCalls.m_Calls");
+                    if (calls == null) return p + "?";
+                    return p + "=[" + string.Join(",", Enumerable.Range(0, calls.arraySize).Select(i =>
+                    {
+                        var c = calls.GetArrayElementAtIndex(i);
+                        var target = c.FindPropertyRelative("m_Target").objectReferenceValue;
+                        string tn = target is Component tc ? Path(tc.transform) + ":" + target.GetType().Name : target is GameObject tg ? Path(tg.transform) : "null";
+                        return $"{tn}.{c.FindPropertyRelative("m_MethodName").stringValue}({c.FindPropertyRelative("m_Arguments.m_BoolArgument").boolValue})";
+                    })) + "]";
+                }));
+                ev += $" colliders={it.colliders.Count}";
+            }
+            Debug.Log($"[Interact] {Path(m.transform)} | collider={(col != null ? col.GetType().Name + " " + col.bounds.size.ToString("F2") : "-")} | interactable={(it != null)} | {ev}");
+        }
+    }
+
+    // 2026-10-27: "erd도 해줘" - 다른 설비처럼 ERD를 컨트롤러로 선택하면 공정정보 패널이 뜨게.
+    // 다른 설비와 같은 구성: 설비 크기의 BoxCollider + XRSimpleInteractable, First Select Entered에
+    // EquipmentPanel.OnSelected → 패널 SetActive(true) (→ 안내 문구가 있으면 SetActive(false)).
+    public static void AttachErdInteract()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath);
+        var erd = Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault(m => m.name == "2.ERD");
+        var ep = erd != null ? erd.GetComponent<EquipmentPanel>() : null;
+        if (erd == null || ep == null) { Debug.LogError("[Attach] 2.ERD 또는 EquipmentPanel 없음"); return; }
+        if (erd.GetComponent<UnityEngine.XR.Interaction.Toolkit.XRSimpleInteractable>() != null) { Debug.Log("[Attach] 이미 있음"); return; }
+
+        var rs = erd.GetComponentsInChildren<Renderer>(true).Where(r => r.GetComponentInParent<Canvas>(true) == null).ToArray();
+        var b = rs[0].bounds;
+        foreach (var r in rs) b.Encapsulate(r.bounds);
+        var box = erd.gameObject.AddComponent<BoxCollider>();
+        box.center = erd.transform.InverseTransformPoint(b.center);
+        Vector3 s = erd.transform.InverseTransformVector(b.size);
+        box.size = new Vector3(Mathf.Abs(s.x), Mathf.Abs(s.y), Mathf.Abs(s.z));
+
+        var it = erd.gameObject.AddComponent<UnityEngine.XR.Interaction.Toolkit.XRSimpleInteractable>();
+        var panel = erd.GetComponentInChildren<Canvas>(true).gameObject; // AttachErdNfPanels가 첫 자식으로 둔 공정정보조회 패널
+        UnityEditor.Events.UnityEventTools.AddVoidPersistentListener(it.firstSelectEntered, ep.OnSelected);
+        UnityEditor.Events.UnityEventTools.AddBoolPersistentListener(it.firstSelectEntered, panel.SetActive, true);
+        var guide = erd.GetComponentsInChildren<Transform>(true).Concat(erd.transform.parent.GetComponentsInChildren<Transform>(true))
+            .FirstOrDefault(t => t.name.Contains("ERD") && t.name.Contains("가이드"));
+        if (guide != null) UnityEditor.Events.UnityEventTools.AddBoolPersistentListener(it.firstSelectEntered, guide.gameObject.SetActive, false);
+
+        Debug.Log($"[Attach] 2.ERD: BoxCollider size={box.size:F2}(월드 {b.size:F2}) + XRSimpleInteractable → OnSelected, {panel.name}.SetActive(true){(guide != null ? ", " + guide.name + ".SetActive(false)" : "")}");
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+    }
+
     static string Path(Transform t) => t.parent == null ? t.name : Path(t.parent) + "/" + t.name;
 
     // RayReport 결과(2026-10-27): 눈높이 1.3m에서 정면 설비까지 2.6m(도크 2.2m + 여유)가 안 되던 지점만,
