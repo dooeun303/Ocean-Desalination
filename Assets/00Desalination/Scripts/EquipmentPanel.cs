@@ -26,6 +26,13 @@ public class EquipmentPanel : MonoBehaviour
 
     private readonly string[] _sensorOrder = { "temperature", "pressure", "vibration", "rpm" };
 
+    // 2026-10-27: "설비 정보 패널에 실시간 데이터 값이 바인딩 되어야 해" - 패널이 보이는 동안 이 주기로 센서
+    // 최신값(sensor_reading의 마지막 값)을 다시 불러온다. 값을 넣는 쪽은 통합 DB 연동 전까지 서버의
+    // 테스트용 생성기(POST /api/sensor-sim).
+    const float SensorRefreshSeconds = 3f;
+    Canvas _canvas;
+    bool _sensorsLoggedOnce;
+
     void Awake()
     {
         var canvas = GetComponentInChildren<Canvas>(includeInactive: true);
@@ -35,6 +42,7 @@ public class EquipmentPanel : MonoBehaviour
             return;
         }
 
+        _canvas = canvas;
         Transform root = canvas.transform;
 
         // 장비 정보
@@ -58,6 +66,19 @@ public class EquipmentPanel : MonoBehaviour
         rpmStatusText = FindStatusText(root, "RPM");
 
         Debug.Log("[EquipmentPanel] UI 자동 연결 완료");
+    }
+
+    // 패널이 켜져 있는 동안만 센서값을 주기적으로 갱신(꺼져 있으면 요청 안 함)
+    IEnumerator Start()
+    {
+        var wait = new WaitForSeconds(SensorRefreshSeconds);
+        var marker = GetComponent<EquipmentMarker>();
+        while (true)
+        {
+            if (_canvas != null && _canvas.gameObject.activeInHierarchy && marker != null && !string.IsNullOrEmpty(marker.equipmentId))
+                yield return FetchSensors(marker.equipmentId);
+            yield return wait;
+        }
     }
 
     // ─────────────────────────────────────────
@@ -155,7 +176,7 @@ public class EquipmentPanel : MonoBehaviour
             }
         }
 
-        Debug.Log("[EquipmentPanel] 센서 데이터 바인딩 완료");
+        if (!_sensorsLoggedOnce) { _sensorsLoggedOnce = true; Debug.Log("[EquipmentPanel] 센서 데이터 바인딩 완료(이후 " + SensorRefreshSeconds + "초마다 갱신)"); }
     }
 
     static string TypeKo(string t) => (t ?? "").ToUpper() switch

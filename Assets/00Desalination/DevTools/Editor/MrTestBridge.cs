@@ -89,6 +89,29 @@ public static class MrTestBridge
                 Call(alert, verb == "alert_primary" ? "OnPrimaryClicked" : "CloseSticky");
                 return verb + " 실행";
             }
+            case "markers": // 씬의 설비 마커 목록(이름 · equipmentId · 텔레포트 포인트)
+            {
+                var ms = UnityEngine.Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                return string.Join(" || ", ms.Select(m => $"{m.name} id={m.equipmentId} tp={(m.teleportPoint != null ? m.teleportPoint.position.ToString("F2") : "없음")}"));
+            }
+            case "arrive": // 원격지원 수락과 같은 도착 경로(텔레포트+정보 패널+도크 배치)를 설비 id로 실행. 통화 채널은 가짜
+            {
+                var list = UnityEngine.Object.FindFirstObjectByType<SupportCallList>(FindObjectsInactive.Include);
+                if (list == null) return "SupportCallList 없음";
+                if (!list.gameObject.activeInHierarchy)
+                    for (var t = list.transform; t != null; t = t.parent) t.gameObject.SetActive(true);
+                var data = new SupportCallData { equipment_id = arg, channel_name = "arrival_test", equipment_name = arg };
+                var m = typeof(SupportCallList).GetMethod("TeleportThenShowDock", BindingFlags.Instance | BindingFlags.NonPublic);
+                list.StartCoroutine((System.Collections.IEnumerator)m.Invoke(list, new object[] { data }));
+                return "도착 실행: " + arg;
+            }
+            case "result_close": // 통화 종료 때 뜨는 "원격지원 결과" 패널 닫기
+            {
+                var panel = UnityEngine.Object.FindFirstObjectByType<RemoteSupportResultPanel>(FindObjectsInactive.Include);
+                if (panel == null) return "RemoteSupportResultPanel 없음";
+                panel.OnClose();
+                return "결과 패널 닫기";
+            }
             case "shot": // Game 뷰 스크린샷 → Temp/mr_shot.png
                 ScreenCapture.CaptureScreenshot(Path.Combine(Directory.GetCurrentDirectory(), "Temp", "mr_shot.png"));
                 return "스크린샷 저장 요청";

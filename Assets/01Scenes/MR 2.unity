@@ -11059,15 +11059,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.003964607
+      value: -0.003964603
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.02008455
+      value: -0.03008455
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.006884997
+      value: -0.0068849945
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -47525,7 +47525,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4435c1067be7b549af8c067ff74bb10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VideoCallSignalingMR
-  debugTestEquipmentId: 
 --- !u!1 &1009889798
 GameObject:
   m_ObjectHideFlags: 0
@@ -58320,9 +58319,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!1 &1269750083
 GameObject:
   m_ObjectHideFlags: 0
@@ -62739,11 +62735,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.009356435
+      value: -0.0093564335
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.021954771
+      value: 0.03595477
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -72275,9 +72271,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!1 &1617885610
 GameObject:
   m_ObjectHideFlags: 0
@@ -80102,15 +80095,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.194
+      value: -8.194001
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.002
+      value: 0.0020000003
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.31
+      value: 2.81
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -111656,9 +111649,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!114 &4421124167275170949
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -115517,9 +115507,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!114 &5984727060503560181
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -119716,9 +119703,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!114 &7445514652706503158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -120240,9 +120224,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!114 &7495379699227348907
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -121692,9 +121673,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!114 &7850676680649548777
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -122225,9 +122203,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!114 &7933905859963889344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -125580,9 +125555,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!114 &8989369183276355976
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -125949,7 +125921,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.174
+      value: -2.1740007
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.y
@@ -125957,7 +125929,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.59
+      value: 5.2900004
       objectReference: {fileID: 0}
     - target: {fileID: 910177715166693454, guid: 4928f329ec7f58146acb47d1cad0a3b2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -126036,9 +126008,6 @@ MonoBehaviour:
   infoPanelFaceFlip: 0
   placeDockBesideInfo: 1
   dockPanelOffset: {x: 1.6, y: 0, z: 0}
-  arLocationRingColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  arLocationRingRadius: 0.5
-  arFigureHeight: 1.6
 --- !u!114 &9126764496840076303
 MonoBehaviour:
   m_ObjectHideFlags: 0

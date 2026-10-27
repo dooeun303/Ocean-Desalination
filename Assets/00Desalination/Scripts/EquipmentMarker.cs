@@ -234,6 +234,7 @@ public class EquipmentMarker : MonoBehaviour
     bool _infoHomeSaved;       // MoveInfoPanel 전 원래 자리
     Vector3 _infoHomePos;
     Quaternion _infoHomeRot;
+    Vector3 _infoHomeScale;
 
     GameObject ResolveInfoPanel()
     {
@@ -344,10 +345,12 @@ public class EquipmentMarker : MonoBehaviour
         var p = ResolveInfoPanel();
         if (p != null)
         {
+            MrUiOnTop.Restore(p);
             if (_infoHomeSaved)
             {
                 p.transform.localPosition = _infoHomePos;
                 p.transform.localRotation = _infoHomeRot;
+                p.transform.localScale = _infoHomeScale;
                 _infoHomeSaved = false;
             }
             p.SetActive(_infoWasActive ?? false);
@@ -359,7 +362,9 @@ public class EquipmentMarker : MonoBehaviour
     // 원래 자리(로컬 위치/회전)는 처음 한 번 기억해 두고 HideInfo에서 되돌린다.
     public Transform InfoPanelTransform => ResolveInfoPanel()?.transform;
 
-    public void MoveInfoPanel(Vector3 worldCenter, Quaternion worldRot)
+    // worldWidth > 0 이면 보이는 판의 가로 폭을 그 값(m)으로 맞춘다 - 2026-10-27: 씬의 설비 정보 패널 대부분이
+    // 1:1 크기(수백 m)로 놓여 있어 왼쪽 자리로 옮기면 화면을 뒤덮었다(맨 앞에 그리기 전엔 설비에 가려 안 보였음).
+    public void MoveInfoPanel(Vector3 worldCenter, Quaternion worldRot, float worldWidth = 0f)
     {
         var p = ResolveInfoPanel();
         if (p == null) return;
@@ -367,9 +372,18 @@ public class EquipmentMarker : MonoBehaviour
         {
             _infoHomePos = p.transform.localPosition;
             _infoHomeRot = p.transform.localRotation;
+            _infoHomeScale = p.transform.localScale;
             _infoHomeSaved = true;
         }
+        if (worldWidth > 0f && p.transform is RectTransform rt)
+        {
+            var corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            float width = Vector3.Distance(corners[0], corners[3]);
+            if (width > 0.0001f) p.transform.localScale *= worldWidth / width;
+        }
         PlaceCentered(p.transform, worldCenter, worldRot);
+        MrUiOnTop.Apply(p); // 원격지원 중에는 설비에 가려지지 않게 - HideInfo에서 되돌림
     }
 
     // RectTransform 피벗이 가운데가 아니어도 "보이는 판의 중심"이 worldCenter에 오게 놓는다.

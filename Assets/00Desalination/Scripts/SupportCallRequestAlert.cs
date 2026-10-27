@@ -51,6 +51,7 @@ public class SupportCallRequestAlert : MonoBehaviour
     {
         Instance = this;
         BuildUI();
+        MrUiOnTop.Apply(canvasGo); // 알림은 설비에 가려지지 않게 항상 맨 앞
         canvasGo.SetActive(false);
 
         audioSource = gameObject.AddComponent<AudioSource>();

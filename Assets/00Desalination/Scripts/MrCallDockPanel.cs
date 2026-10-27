@@ -132,6 +132,7 @@ public class MrCallDockPanel : MonoBehaviour
         callStartTime = Time.time;
         SetConnectingText(DefaultConnectingText); // 이전 통화의 "연결 실패" 문구가 남지 않게
         canvasGo.SetActive(true);
+        MrUiOnTop.Apply(canvasGo); // 설비에 가려지지 않게(도크에 끼워 넣은 탭 내용까지 매번 다시)
 
         // 2026-10-21: 원격지원으로 설비 앞에 도착했으면 세 패널을 시선 기준으로 한 번에 배치한다
         // (왼쪽 공정정보 · 가운데 화상통화 · 오른쪽 정보공유). 그 외(설비 없이 통화)는 아래 기존 방식.
@@ -193,7 +194,7 @@ public class MrCallDockPanel : MonoBehaviour
 
         // 왼쪽: 공정정보 패널 (크기·부모 그대로, 통화 끝나면 EquipmentMarker.HideInfo가 원래 자리로)
         Vector3 left = Side(-SideYaw);
-        marker.MoveInfoPanel(left, Facing(left));
+        marker.MoveInfoPanel(left, Facing(left), PanelWidth * MrUiTheme.HudScale); // 도크와 같은 폭
 
         // 오른쪽: 자리만 기억 (정보공유/지시하기 버튼을 누르면 여기에 뜬다)
         rightSlotPos = Side(SideYaw);
@@ -210,6 +211,7 @@ public class MrCallDockPanel : MonoBehaviour
         if (!movedPanels.Exists(m => m.t == t))
             movedPanels.Add(new MovedPanel { t = t, pos = t.localPosition, rot = t.localRotation, wasActive = wasActiveBeforeOpen });
         EquipmentMarker.PlaceCentered(t, rightSlotPos, rightSlotRot);
+        MrUiOnTop.Apply(t.gameObject);
     }
 
     // 통화가 끝나면 오른쪽 자리에 옮겼던 패널을 원래 자리·켜짐 상태로 되돌린다.
@@ -218,6 +220,7 @@ public class MrCallDockPanel : MonoBehaviour
         foreach (var m in movedPanels)
         {
             if (m.t == null) continue;
+            MrUiOnTop.Restore(m.t.gameObject);
             m.t.localPosition = m.pos;
             m.t.localRotation = m.rot;
             m.t.gameObject.SetActive(m.wasActive);
