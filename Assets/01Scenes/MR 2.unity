@@ -418,7 +418,6 @@ GameObject:
   - component: {fileID: 17588874}
   - component: {fileID: 17588873}
   - component: {fileID: 17588876}
-  - component: {fileID: 17588877}
   m_Layer: 5
   m_Name: "\uC791\uC5C5\uB9E4\uB274\uC5BC"
   m_TagString: Untagged
@@ -491,7 +490,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 17588877}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -567,18 +566,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 1
   m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
---- !u!114 &17588877
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 17588871}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9e7f9d989edcb54192f2278a57207cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ButtonHandler
 --- !u!1 &17717863
 GameObject:
   m_ObjectHideFlags: 0
@@ -1210,7 +1197,6 @@ GameObject:
   - component: {fileID: 31339908}
   - component: {fileID: 31339907}
   - component: {fileID: 31339906}
-  - component: {fileID: 31339909}
   m_Layer: 5
   m_Name: "\uC54C\uB9BC\uB9AC\uC2A4\uD2B8"
   m_TagString: Untagged
@@ -1538,18 +1524,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 50, y: 60, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &31339909
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 31339898}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!1 &32076428
 GameObject:
   m_ObjectHideFlags: 0
@@ -6560,7 +6534,6 @@ GameObject:
   - component: {fileID: 159032357}
   - component: {fileID: 159032356}
   - component: {fileID: 159032355}
-  - component: {fileID: 159032354}
   m_Layer: 5
   m_Name: "\uC815\uBCF4\uACF5\uC720"
   m_TagString: Untagged
@@ -6588,18 +6561,6 @@ RectTransform:
   m_AnchoredPosition: {x: 60.3, y: 0}
   m_SizeDelta: {x: 50, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &159032354
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 159032352}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!114 &159032355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13735,7 +13696,6 @@ GameObject:
   - component: {fileID: 276697942}
   - component: {fileID: 276697941}
   - component: {fileID: 276697940}
-  - component: {fileID: 276697946}
   m_Layer: 5
   m_Name: "\uC77C\uBC18 \uC124\uC815"
   m_TagString: Untagged
@@ -14002,18 +13962,6 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 1
---- !u!114 &276697946
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 276697939}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!1001 &277633048
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18245,7 +18193,6 @@ GameObject:
   - component: {fileID: 376584462}
   - component: {fileID: 376584465}
   - component: {fileID: 376584466}
-  - component: {fileID: 376584467}
   m_Layer: 5
   m_Name: "\uBA54\uC778 \uD654\uBA74 \uC774\uB3D9"
   m_TagString: Untagged
@@ -18408,18 +18355,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 1
   m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
---- !u!114 &376584467
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 376584460}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9e7f9d989edcb54192f2278a57207cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ButtonHandler
 --- !u!1 &377524111
 GameObject:
   m_ObjectHideFlags: 0
@@ -19063,7 +18998,6 @@ GameObject:
   - component: {fileID: 390169398}
   - component: {fileID: 390169397}
   - component: {fileID: 390169396}
-  - component: {fileID: 390169394}
   - component: {fileID: 390169395}
   m_Layer: 5
   m_Name: "\uC6D0\uACA9 \uC9C0\uC6D0"
@@ -19072,18 +19006,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!114 &390169394
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 390169393}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!114 &390169395
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23557,7 +23479,6 @@ GameObject:
   - component: {fileID: 501511445}
   - component: {fileID: 501511444}
   - component: {fileID: 501511443}
-  - component: {fileID: 501511442}
   - component: {fileID: 501511441}
   m_Layer: 5
   m_Name: QR
@@ -23610,18 +23531,6 @@ MonoBehaviour:
   hideOnArrival:
   - {fileID: 910723504}
   testTargetMarker: {fileID: 9126764496840076302}
---- !u!114 &501511442
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 501511439}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!114 &501511443
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27116,37 +27025,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -2.5}
   m_SizeDelta: {x: 29, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &572381204
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 572381205}
-  m_Layer: 0
-  m_Name: walls (1)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &572381205
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 572381204}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 32.36, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2112630489}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &574191983
 GameObject:
   m_ObjectHideFlags: 0
@@ -37455,7 +37333,6 @@ GameObject:
   - component: {fileID: 740530451}
   - component: {fileID: 740530450}
   - component: {fileID: 740530453}
-  - component: {fileID: 740530454}
   m_Layer: 5
   m_Name: "\uAC00\uC0C1\uACF5\uAC04 \uAC00\uC774\uB4DC"
   m_TagString: Untagged
@@ -37528,7 +37405,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 740530454}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -37604,18 +37481,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 1
   m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
---- !u!114 &740530454
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 740530448}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9e7f9d989edcb54192f2278a57207cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ButtonHandler
 --- !u!1 &745196895
 GameObject:
   m_ObjectHideFlags: 0
@@ -38414,7 +38279,6 @@ GameObject:
   - component: {fileID: 776914670}
   - component: {fileID: 776914669}
   - component: {fileID: 776914668}
-  - component: {fileID: 776914671}
   m_Layer: 5
   m_Name: "\uB2EB\uAE30"
   m_TagString: Untagged
@@ -38486,7 +38350,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 776914671}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CloseButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -38536,18 +38400,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 776914666}
   m_CullTransparentMesh: 1
---- !u!114 &776914671
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 776914666}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c09792bb26d866d44aa0ecfdcd59098e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseButtonHandler
 --- !u!1 &784435726
 GameObject:
   m_ObjectHideFlags: 0
@@ -38697,7 +38549,6 @@ GameObject:
   - component: {fileID: 2079991247}
   - component: {fileID: 2079991250}
   - component: {fileID: 2079991249}
-  - component: {fileID: 2079991251}
   m_Layer: 5
   m_Name: "\uB2EB\uAE30"
   m_TagString: Untagged
@@ -41218,7 +41069,6 @@ GameObject:
   - component: {fileID: 817339794}
   - component: {fileID: 817339793}
   - component: {fileID: 817339792}
-  - component: {fileID: 817339791}
   m_Layer: 5
   m_Name: "\uB2EB\uAE30"
   m_TagString: Untagged
@@ -41246,18 +41096,6 @@ RectTransform:
   m_AnchoredPosition: {x: 25, y: -60.25}
   m_SizeDelta: {x: 400, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &817339791
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 817339789}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c09792bb26d866d44aa0ecfdcd59098e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseButtonHandler
 --- !u!114 &817339792
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -41389,6 +41227,7 @@ Transform:
   - {fileID: 713007832}
   - {fileID: 368673196}
   - {fileID: 1008311022}
+  - {fileID: 1892632440}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &825038188
@@ -43992,7 +43831,6 @@ GameObject:
   - component: {fileID: 910723511}
   - component: {fileID: 910723510}
   - component: {fileID: 910723512}
-  - component: {fileID: 910723513}
   m_Layer: 5
   m_Name: "\uBA54\uB274"
   m_TagString: Untagged
@@ -44303,18 +44141,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 40, y: 60, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &910723513
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 910723504}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!1 &911439598
 GameObject:
   m_ObjectHideFlags: 0
@@ -44805,7 +44631,6 @@ GameObject:
   - component: {fileID: 918387934}
   - component: {fileID: 918387933}
   - component: {fileID: 918387932}
-  - component: {fileID: 918387935}
   m_Layer: 5
   m_Name: "\uB2EB\uAE30"
   m_TagString: Untagged
@@ -44877,7 +44702,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 918387935}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CloseButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -44927,18 +44752,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 918387930}
   m_CullTransparentMesh: 1
---- !u!114 &918387935
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 918387930}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c09792bb26d866d44aa0ecfdcd59098e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseButtonHandler
 --- !u!1 &923856133
 GameObject:
   m_ObjectHideFlags: 0
@@ -50465,7 +50278,6 @@ GameObject:
   - component: {fileID: 1083901461}
   - component: {fileID: 1083901460}
   - component: {fileID: 1083901459}
-  - component: {fileID: 1083901458}
   m_Layer: 5
   m_Name: "\uB2EB\uAE30"
   m_TagString: Untagged
@@ -50493,18 +50305,6 @@ RectTransform:
   m_AnchoredPosition: {x: 25, y: -54.5}
   m_SizeDelta: {x: 400, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1083901458
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1083901456}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c09792bb26d866d44aa0ecfdcd59098e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseButtonHandler
 --- !u!114 &1083901459
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50549,7 +50349,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1083901458}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CloseButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -55988,7 +55788,6 @@ GameObject:
   - component: {fileID: 1210732685}
   - component: {fileID: 1210732684}
   - component: {fileID: 1210732683}
-  - component: {fileID: 1210732686}
   m_Layer: 5
   m_Name: "\uAC00\uC774\uB4DC"
   m_TagString: Untagged
@@ -56298,18 +56097,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 40, y: 40, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1210732686
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1210732677}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!1 &1211747438
 GameObject:
   m_ObjectHideFlags: 0
@@ -57946,7 +57733,6 @@ GameObject:
   - component: {fileID: 1267121982}
   - component: {fileID: 1267121981}
   - component: {fileID: 1267121980}
-  - component: {fileID: 1267121983}
   m_Layer: 5
   m_Name: "\uC791\uC5C5\uB9E4\uB274\uC5BC(1)"
   m_TagString: Untagged
@@ -58256,18 +58042,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 50, y: 60, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1267121983
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1267121974}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!1 &1267432331
 GameObject:
   m_ObjectHideFlags: 0
@@ -60492,7 +60266,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1313142801}
   m_Layer: 0
-  m_Name: ring
+  m_Name: RingAnchor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -60506,12 +60280,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1313142800}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 39.45, y: 0.0761, z: -2.53}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0.50000006, y: 0.49999997, z: 0.5, w: 0.5000001}
+  m_LocalPosition: {x: 0.006232333, y: 0.0051389704, z: -0.010349817}
+  m_LocalScale: {x: 0.008951517, y: 0.008951507, z: 0.008951517}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 7969814754738917415}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1314404300
 GameObject:
@@ -62529,7 +62303,6 @@ GameObject:
   - component: {fileID: 1369494100}
   - component: {fileID: 1369494099}
   - component: {fileID: 1369494102}
-  - component: {fileID: 1369494103}
   m_Layer: 5
   m_Name: "\uC77C\uBC18\uC124\uC815"
   m_TagString: Untagged
@@ -62602,7 +62375,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1369494103}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -62678,18 +62451,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 1
   m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
---- !u!114 &1369494103
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1369494096}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9e7f9d989edcb54192f2278a57207cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ButtonHandler
 --- !u!1 &1371274327
 GameObject:
   m_ObjectHideFlags: 0
@@ -65867,7 +65628,6 @@ GameObject:
   - component: {fileID: 1450119775}
   - component: {fileID: 1450119774}
   - component: {fileID: 1450119773}
-  - component: {fileID: 1450119776}
   m_Layer: 5
   m_Name: "\uB2EB\uAE30"
   m_TagString: Untagged
@@ -65939,7 +65699,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1450119776}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CloseButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -65989,18 +65749,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1450119771}
   m_CullTransparentMesh: 1
---- !u!114 &1450119776
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1450119771}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c09792bb26d866d44aa0ecfdcd59098e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseButtonHandler
 --- !u!1 &1457660930
 GameObject:
   m_ObjectHideFlags: 0
@@ -84293,7 +84041,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1752728597}
-  - component: {fileID: 1752728598}
   - component: {fileID: 1752728599}
   m_Layer: 0
   m_Name: menumanager
@@ -84317,19 +84064,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 818758668}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1752728598
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1752728596}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5e6d18cd89c7bd14dbc9b2515aadad8e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Menu
-  menuPanel: {fileID: 0}
 --- !u!114 &1752728599
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87586,7 +87320,6 @@ GameObject:
   - component: {fileID: 1819907307}
   - component: {fileID: 1819907306}
   - component: {fileID: 1819907309}
-  - component: {fileID: 1819907310}
   m_Layer: 5
   m_Name: "\uC54C\uB9BC \uB9AC\uC2A4\uD2B8"
   m_TagString: Untagged
@@ -87659,7 +87392,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1819907310}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -87735,18 +87468,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 1
   m_ChildScaleHeight: 1
   m_ReverseArrangement: 0
---- !u!114 &1819907310
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1819907304}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9e7f9d989edcb54192f2278a57207cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ButtonHandler
 --- !u!1 &1824033961
 GameObject:
   m_ObjectHideFlags: 0
@@ -89732,7 +89453,7 @@ GameObject:
   - component: {fileID: 1892632440}
   - component: {fileID: 1892632441}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: MrCallDockPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -89746,12 +89467,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1892632439}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.75682, y: 2.36237, z: -0.94684}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.40244, y: 2.30725, z: 2.26312}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 818758668}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1892632441
 MonoBehaviour:
@@ -91515,7 +91236,6 @@ GameObject:
   - component: {fileID: 1918664134}
   - component: {fileID: 1918664133}
   - component: {fileID: 1918664132}
-  - component: {fileID: 1918664135}
   m_Layer: 5
   m_Name: "\uC791\uC5C5\uB9E4\uB274\uC5BC"
   m_TagString: Untagged
@@ -91825,18 +91545,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 50, y: 60, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1918664135
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1918664126}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2da81c49118562b48857f2d0587e4e85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PanelHandler
 --- !u!1 &1936872204
 GameObject:
   m_ObjectHideFlags: 0
@@ -94143,7 +93851,6 @@ GameObject:
   - component: {fileID: 2035129439}
   - component: {fileID: 2035129438}
   - component: {fileID: 2035129437}
-  - component: {fileID: 2035129436}
   m_Layer: 5
   m_Name: "\uC720\uC9C0\uBCF4\uC218 \uC9C0\uC6D0\uC694\uCCAD"
   m_TagString: Untagged
@@ -94172,18 +93879,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 300, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &2035129436
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2035129434}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9e7f9d989edcb54192f2278a57207cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ButtonHandler
 --- !u!114 &2035129437
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96331,7 +96026,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2079991251}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CloseButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -96373,18 +96068,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2079991251
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 784624049}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c09792bb26d866d44aa0ecfdcd59098e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseButtonHandler
 --- !u!1 &2080133486
 GameObject:
   m_ObjectHideFlags: 0
@@ -96796,7 +96479,6 @@ GameObject:
   - component: {fileID: 2093341863}
   - component: {fileID: 2093341862}
   - component: {fileID: 2093341861}
-  - component: {fileID: 2093341864}
   m_Layer: 5
   m_Name: "\uB2EB\uAE30 (1)"
   m_TagString: Untagged
@@ -96868,7 +96550,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2093341864}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: CloseButtonHandler, Assembly-CSharp
         m_MethodName: OnButtonClickForGeneral
         m_Mode: 1
@@ -96918,18 +96600,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2093341859}
   m_CullTransparentMesh: 1
---- !u!114 &2093341864
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2093341859}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c09792bb26d866d44aa0ecfdcd59098e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseButtonHandler
 --- !u!1 &2095197595
 GameObject:
   m_ObjectHideFlags: 0
@@ -97317,7 +96987,6 @@ Transform:
   m_Children:
   - {fileID: 543450653112912462}
   - {fileID: 1435210703}
-  - {fileID: 572381205}
   - {fileID: 2021815953}
   - {fileID: 1954574585}
   m_Father: {fileID: 0}
@@ -122760,6 +122429,7 @@ Transform:
   m_Children:
   - {fileID: 691595021}
   - {fileID: 650062530}
+  - {fileID: 1313142801}
   m_Father: {fileID: 1107853767}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &7982923665266276285
@@ -126511,5 +126181,3 @@ SceneRoots:
   - {fileID: 818758668}
   - {fileID: 56312470}
   - {fileID: 2112630489}
-  - {fileID: 1892632440}
-  - {fileID: 1313142801}
