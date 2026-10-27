@@ -115,8 +115,7 @@ public class AlarmUI : MonoBehaviour
                     Transform xrRig = GameObject.Find("XR Origin (XR Rig)").transform;
                     StartCoroutine(FadeController.Instance.FadeAndTeleport(() =>
                     {
-                        xrRig.position = marker.teleportPoint.position;
-                        xrRig.rotation = EquipmentMarker.UprightRotation(marker.teleportPoint);
+                        RigTeleport.MoveTo(xrRig, marker.teleportPoint);
                     }));
                     // "고장예지 알람 설비로 이동할 때 뭔가 효과(테두리 등)가 있었으면 좋겠다" 요청 -
                     // 도착한 설비를 잠깐 밝은 색으로 펄스 하이라이트해서 어떤 설비인지 바로 알아보게 한다.

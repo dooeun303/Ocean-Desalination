@@ -103,6 +103,7 @@ public class EquipmentPanel : MonoBehaviour
         }
 
         Debug.Log("[EquipmentPanel] UUID: " + uuid);
+        marker.FaceInfoPanelToViewer();
         StartCoroutine(FetchEquipment(uuid));
         StartCoroutine(FetchSensors(uuid));
     }

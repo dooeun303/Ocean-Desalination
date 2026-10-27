@@ -13,8 +13,7 @@ public class Teleport : MonoBehaviour
         StartCoroutine(FadeController.Instance.FadeAndTeleport(() =>
         {
             Debug.Log("[Maintenance] 텔레포트 실행!");
-            xrRig.position = spawnPoint.position;
-            xrRig.rotation = spawnPoint.rotation;
+            RigTeleport.MoveTo(xrRig, spawnPoint.position, spawnPoint.rotation);
         }));
     }
 

@@ -188,10 +188,36 @@ public class SupportCallRequestAlert : MonoBehaviour
         if (sticky != null) ShowSticky();
     }
 
-    // 떠 있는 3초 동안은 머리를 따라 움직인다(고개를 돌려도 보이게). 버튼 알림은 고정.
+    // 떠 있는 3초 동안은 머리를 따라 움직인다(고개를 돌려도 보이게).
+    // 버튼 알림은 평소엔 고정(겨누기 쉽게)이다가, 시야에서 벗어나면 눈앞으로 부드럽게 다시 온다.
+    // 2026-10-27 Quest 확인: 나타날 때 한 번만 놓았더니 고개를 돌리고 있던 사용자 앞에 안 떠 있었다.
     void LateUpdate()
     {
-        if (canvasGo.activeSelf && showRoutine != null) PlaceInFrontOfViewer();
+        if (!canvasGo.activeSelf) return;
+        if (showRoutine != null) PlaceInFrontOfViewer();
+        else if (sticky != null) FollowLazily();
+    }
+
+    const float RecenterAngle = 35f;    // 시선과 이만큼 벌어지면 다시 데려온다
+    const float RecenterSpeed = 5f;
+    bool recentering;
+
+    void FollowLazily()
+    {
+        var cam = Camera.main;
+        if (cam == null) return;
+        Vector3 eye = cam.transform.position;
+        Vector3 toPanel = canvasGo.transform.position - eye;
+        Vector3 fwd = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up);
+        float angle = Vector3.Angle(fwd, Vector3.ProjectOnPlane(toPanel, Vector3.up));
+        float dist = toPanel.magnitude;
+        if (angle > RecenterAngle || dist > MrUiTheme.HudDepth * 2f) recentering = true;
+        if (!recentering) return;
+
+        GetFrontPose(cam, out var pos, out var rot);
+        float k = 1f - Mathf.Exp(-RecenterSpeed * Time.deltaTime);
+        canvasGo.transform.SetPositionAndRotation(Vector3.Lerp(canvasGo.transform.position, pos, k), Quaternion.Slerp(canvasGo.transform.rotation, rot, k));
+        if ((canvasGo.transform.position - pos).sqrMagnitude < 0.0004f) recentering = false;
     }
 
     // 시선의 수평 방향 앞쪽, 눈높이보다 살짝 위. 패널 앞면이 사용자를 향하게.
@@ -199,11 +225,18 @@ public class SupportCallRequestAlert : MonoBehaviour
     {
         var cam = Camera.main;
         if (cam == null) return;
+        GetFrontPose(cam, out var pos, out var rot);
+        canvasGo.transform.SetPositionAndRotation(pos, rot);
+        recentering = false;
+    }
+
+    static void GetFrontPose(Camera cam, out Vector3 pos, out Quaternion rot)
+    {
         Vector3 fwd = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up);
         if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.ProjectOnPlane(cam.transform.up, Vector3.up);
         fwd.Normalize();
-        Vector3 pos = cam.transform.position + fwd * (MrUiTheme.HudDepth * 0.9f) + Vector3.up * 0.15f;
-        canvasGo.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(pos - cam.transform.position, Vector3.up));
+        pos = cam.transform.position + fwd * (MrUiTheme.HudDepth * 0.9f) + Vector3.up * 0.15f;
+        rot = Quaternion.LookRotation(pos - cam.transform.position, Vector3.up);
     }
 
     // AR 없이 모양/소리 확인 - Play 모드에서 DontDestroyOnLoad의 SupportCallRequestAlert 선택 → 컴포넌트 우클릭.

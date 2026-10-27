@@ -167,8 +167,7 @@ public class SupportCallList : MonoBehaviour
             yield return FadeController.Instance.FadeAndTeleport(() =>
             {
                 // 검은 화면인 동안: 설비 앞으로 순간이동 + 메뉴 숨김 + 설비 정보 패널 + 도크 발화.
-                xrRig.position = targetPoint.position;
-                xrRig.rotation = EquipmentMarker.UprightRotation(targetPoint);
+                RigTeleport.MoveTo(xrRig, targetPoint);
                 ApplyArrival(marker);
                 // 기존 MrCallDockPanel 등 OnCallAccepted 구독자가 그대로 반응해서 화상통화 화면으로 이어진다.
                 VideoCallSignalingMR.RaiseCallAccepted(data.channel_name, data.id);
@@ -209,8 +208,7 @@ public class SupportCallList : MonoBehaviour
         {
             yield return FadeController.Instance.FadeAndTeleport(() =>
             {
-                xrRig.position = targetPoint.position;
-                xrRig.rotation = EquipmentMarker.UprightRotation(targetPoint);
+                RigTeleport.MoveTo(xrRig, targetPoint);
                 ApplyArrival(marker);
             },
             () => PlayArrivalEffects(marker));

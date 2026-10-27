@@ -197,4 +197,219 @@ public static class MrTeleportTools
         EditorSceneManager.SaveScene(scene);
         Debug.Log("[Teleport] 씬 저장");
     }
+
+    // 2026-10-27 Quest: 알람 "설비로 이동"으로 OARO에 가면 너무 가깝고 조이스틱 이동이 안 됐다.
+    // 원인: 지점마다 표시용 기둥(…공정공간이동 포인트/Cylinder)에 막힌 CapsuleCollider가 있어 플레이어가 그 속에
+    // 내려앉았고, 몇 지점은 설비 콜라이더(BoxCollider)와도 겹쳤다.
+    // FitReport: 지점마다(표시 기둥 제외) 몸 캡슐이 겹치는 것, 설비 바운즈 가장자리까지 거리.
+    // FitApply: 표시 기둥 콜라이더를 끄고(기둥 모양은 그대로), 겹치거나 설비에 FitClearance보다 가까운 지점을
+    //           바라보는 반대 방향으로 물린다. 씬 저장.
+    const float BodyRadius = 0.3f;
+    const float FitClearance = 2.0f;   // 설비 바운즈 가장자리에서 몸 중심까지 최소 거리(다른 지점들이 2.6m 안팎)
+    const float HugeEquipment = 6f;    // 바운즈가 이보다 크면(여러 설비를 묶은 마커) 거리 기준은 안 쓴다
+
+    // 텔레포트 지점 아래 오브젝트들의 컴포넌트(콜라이더 트리거 여부, 렌더러 켜짐)
+    public static void PointReport()
+    {
+        EditorSceneManager.OpenScene(ScenePath);
+        foreach (var m in Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None).OrderBy(x => x.name))
+        {
+            if (m.teleportPoint == null) continue;
+            foreach (var t in m.teleportPoint.GetComponentsInChildren<Transform>(true))
+                Debug.Log($"[Point] {m.name}: {Path(t)} active={t.gameObject.activeInHierarchy} layer={LayerMask.LayerToName(t.gameObject.layer)} | " +
+                    string.Join(", ", t.GetComponents<Component>().Select(c => c.GetType().Name +
+                        (c is Collider col ? $"(trigger={col.isTrigger},on={col.enabled})" : c is Renderer r ? $"(on={r.enabled})" : ""))));
+        }
+    }
+
+    // 마커별 하이라이트 대상·색·인터랙터블, XR 리그의 이동 관련 컴포넌트
+    public static void RigReport()
+    {
+        EditorSceneManager.OpenScene(ScenePath);
+        foreach (var m in Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None).OrderBy(x => x.name))
+        {
+            var it = m.GetComponent<UnityEngine.XR.Interaction.Toolkit.XRBaseInteractable>();
+            var root = m.highlightTarget != null ? m.highlightTarget : m.transform;
+            Debug.Log($"[Rig] marker {Path(m.transform)} | 하이라이트 대상 {Path(root)} (렌더러 {root.GetComponentsInChildren<Renderer>(true).Length}) rim={m.rimColor} | interactable={(it != null ? it.GetType().Name + " colliders=" + it.colliders.Count : "없음")} | Outline 미리 붙음={root.GetComponent<Outline>() != null}");
+        }
+        foreach (var o in Object.FindObjectsByType<Outline>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            Debug.Log($"[Rig] Outline {Path(o.transform)} on={o.enabled} color={o.OutlineColor}");
+        var rig = GameObject.Find("XR Origin (XR Rig)");
+        if (rig == null) { Debug.Log("[Rig] XR Origin 없음"); return; }
+        foreach (var c in rig.GetComponentsInChildren<Component>(true))
+        {
+            string n = c.GetType().Name;
+            if (n.Contains("Move") || n.Contains("Locomotion") || n.Contains("Teleport") || n.Contains("Turn") || n.Contains("CharacterController") || n.Contains("Climb") || n.Contains("Grab") && n.Contains("Move") || n.Contains("Body") || n.Contains("Gravity"))
+                Debug.Log($"[Rig] {Path(c.transform)} {n} on={(c is Behaviour b ? b.enabled : c is Collider col ? col.enabled : true)} active={c.gameObject.activeInHierarchy}" + (c is CharacterController cc ? $" r={cc.radius} h={cc.height} center={cc.center}" : ""));
+        }
+        Debug.Log($"[Rig] Physics.autoSyncTransforms={Physics.autoSyncTransforms}");
+    }
+
+    // 마커별 선택 콜라이더(XRSimpleInteractable이 가져가는 자식 콜라이더)의 월드 바운즈
+    public static void ColliderReport()
+    {
+        EditorSceneManager.OpenScene(ScenePath);
+        foreach (var m in Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None).OrderBy(x => x.name))
+            foreach (var c in m.GetComponentsInChildren<Collider>(true).Where(c => c.enabled && c.GetComponentInParent<Canvas>(true) == null && !UnderPoint(m, c.transform)))
+                Debug.Log($"[Col] {m.name}: {Path(c.transform)} {c.GetType().Name} trigger={c.isTrigger} 중심 {c.bounds.center:F1} 크기 {c.bounds.size:F1}");
+    }
+
+    // 2026-10-27: pump1은 하이라이트 대상이 펌프 묶음(1.PUMP) 전체에 색도 주황빨강이라, 알람으로 pump1에 가면
+    // pump2까지 붉게 감쌌다. 자기 렌더러가 있는 마커는 자기 자신을 대상으로, 색은 기본 하늘색으로 맞춘다.
+    public static void FixHighlight()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath);
+        var markers = Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var defaultRim = new Color(0.35f, 0.8f, 1f, 1f);
+        foreach (var m in markers)
+        {
+            bool changed = false;
+            var t = m.highlightTarget;
+            if (t != null && t != m.transform && markers.Any(o => o != m && o.transform.IsChildOf(t)) && m.GetComponentsInChildren<Renderer>(true).Length > 0)
+            {
+                Debug.Log($"[Highlight] {m.name}: 대상 {Path(t)} → 자기 자신 (다른 설비까지 감싸던 묶음)");
+                m.highlightTarget = null;
+                changed = true;
+            }
+            if (m.rimColor != defaultRim)
+            {
+                Debug.Log($"[Highlight] {m.name}: 색 {m.rimColor} → 기본 하늘색");
+                m.rimColor = defaultRim;
+                changed = true;
+            }
+            if (changed) PrefabUtility.RecordPrefabInstancePropertyModifications(m);
+
+            // 선택용 BoxCollider가 설비 메시보다 훨씬 크면(2.ERD: 정보 패널까지 감싸 앞쪽 3.6m를 덮음) 메시에 맞춘다.
+            var box = m.GetComponent<BoxCollider>();
+            if (box != null && TryEquipmentBounds(m, out var rb))
+            {
+                float Vol(Vector3 s) => s.x * s.y * s.z;
+                if (Vol(box.bounds.size) > Vol(rb.size) * 1.5f)
+                {
+                    var before = box.bounds;
+                    var tr = box.transform;
+                    box.center = tr.InverseTransformPoint(rb.center);
+                    Vector3 ls = tr.InverseTransformVector(rb.size);
+                    box.size = new Vector3(Mathf.Abs(ls.x), Mathf.Abs(ls.y), Mathf.Abs(ls.z));
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(box);
+                    Debug.Log($"[Highlight] {m.name}: 선택 콜라이더 {before.center:F1}/{before.size:F1} → {box.bounds.center:F1}/{box.bounds.size:F1}");
+                }
+            }
+        }
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+    }
+
+    // FitApply가 2.ERD 지점을 물린 건 너무 큰 선택 콜라이더(FixHighlight로 줄임) 때문이었다 - 원래 자리로.
+    public static void RestoreErdPoint()
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath);
+        var m = Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None).First(x => x.name == "2.ERD");
+        var before = m.teleportPoint.position;
+        m.teleportPoint.position = new Vector3(before.x, before.y, 5.68f);
+        PrefabUtility.RecordPrefabInstancePropertyModifications(m.teleportPoint);
+        var temp = AddTempMeshColliders();
+        Debug.Log($"[Fit] 2.ERD: {before:F2} → {m.teleportPoint.position:F2} | {Describe(m, m.teleportPoint.position, TryEquipmentBounds(m, out var b) ? b : default, true)}");
+        foreach (var c in temp) Object.DestroyImmediate(c);
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+    }
+
+    // "메뉴"라는 이름의 오브젝트들: 경로·켜짐·컴포넌트·월드 위치(리그 기준 로컬)
+    public static void MenuReport()
+    {
+        EditorSceneManager.OpenScene(ScenePath);
+        foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Where(t => t.name.Contains("메뉴") || t.name.ToLower().Contains("menu")))
+            Debug.Log($"[Menu] {Path(t)} activeSelf={t.gameObject.activeSelf} inHierarchy={t.gameObject.activeInHierarchy} local={t.localPosition:F2} rot={t.localEulerAngles:F0} scale={t.lossyScale:F3} | " +
+                string.Join(", ", t.GetComponents<Component>().Select(c => c.GetType().Name)));
+    }
+
+    public static void FitReport() => Fit(false);
+    public static void FitApply() => Fit(true);
+
+    static void Fit(bool apply)
+    {
+        var scene = EditorSceneManager.OpenScene(ScenePath);
+        var markers = Object.FindObjectsByType<EquipmentMarker>(FindObjectsInactive.Include, FindObjectsSortMode.None).OrderBy(x => x.name).ToArray();
+        if (apply)
+            foreach (var m in markers.Where(x => x.teleportPoint != null))
+                foreach (var c in m.teleportPoint.GetComponentsInChildren<Collider>(true).Where(c => c.enabled && !c.isTrigger))
+                {
+                    c.enabled = false;
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(c);
+                    Debug.Log($"[Fit] 표시 기둥 콜라이더 끔: {Path(c.transform)}");
+                }
+
+        var temp = AddTempMeshColliders();
+        foreach (var m in markers)
+        {
+            var tp = m.teleportPoint;
+            if (tp == null) continue;
+            bool hasBounds = TryEquipmentBounds(m, out var b);
+            bool useEdge = hasBounds && Mathf.Max(b.size.x, b.size.z) < HugeEquipment;
+            Debug.Log(Describe(m, tp.position, b, hasBounds));
+            if (!apply) continue;
+
+            Vector3 back = -Vector3.ProjectOnPlane(EquipmentMarker.UprightRotation(tp) * Vector3.forward, Vector3.up).normalized;
+            bool Bad(Vector3 q) => Overlaps(m, q, BodyRadius + 0.2f).Length > 0 || (useEdge && DistanceFlat(b, q) < FitClearance);
+            Vector3 p = tp.position;
+            if (!Bad(p)) continue;
+            for (int i = 0; i < 40 && Bad(p); i++) p += back * 0.1f;
+            Vector3 before = tp.position;
+            tp.position = p;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(tp);
+            Debug.Log($"[Fit] {m.name}: {before:F2} → {p:F2} ({Vector3.Distance(before, p):F2}m 뒤로){(Bad(p) ? " ※4m 물려도 여유 부족" : "")} | 이후 {Describe(m, p, b, hasBounds)}");
+        }
+        foreach (var c in temp) Object.DestroyImmediate(c);
+        if (apply) { EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene); Debug.Log("[Fit] 씬 저장"); }
+    }
+
+    static string Describe(EquipmentMarker m, Vector3 p, Bounds b, bool hasBounds)
+    {
+        var hits = Overlaps(m, p, BodyRadius);
+        string edge = hasBounds ? $"설비 가장자리까지 {DistanceFlat(b, p):F2}m (설비 크기 {b.size.x:F1}x{b.size.z:F1})" : "설비 렌더러 없음";
+        return $"[Fit] {m.name}: 지점 {p:F2} · {edge} · 몸 겹침 {(hits.Length == 0 ? "없음" : string.Join(",", hits.Select(h => Path(h.transform) + (h is MeshCollider ? "" : "[" + h.GetType().Name + "]")).Distinct().Take(5)))}";
+    }
+
+    // 설비(하이라이트 대상) 렌더러를 합친 바운즈. 정보 패널(Canvas)과 텔레포트 지점(표시 기둥)은 뺀다.
+    static bool TryEquipmentBounds(EquipmentMarker m, out Bounds b)
+    {
+        b = default;
+        var root = m.highlightTarget != null ? m.highlightTarget : m.transform;
+        var rends = root.GetComponentsInChildren<Renderer>(true)
+            .Where(r => r.GetComponentInParent<Canvas>(true) == null && !(r is ParticleSystemRenderer) && !UnderPoint(m, r.transform)).ToArray();
+        if (rends.Length == 0) return false;
+        b = rends[0].bounds;
+        foreach (var r in rends) b.Encapsulate(r.bounds);
+        return true;
+    }
+
+    static bool UnderPoint(EquipmentMarker m, Transform t) => m.teleportPoint != null && t.IsChildOf(m.teleportPoint);
+
+    // 바운즈 XZ 사각형까지의 거리(안이면 0)
+    static float DistanceFlat(Bounds b, Vector3 p)
+    {
+        float dx = Mathf.Max(b.min.x - p.x, 0f, p.x - b.max.x);
+        float dz = Mathf.Max(b.min.z - p.z, 0f, p.z - b.max.z);
+        return Mathf.Sqrt(dx * dx + dz * dz);
+    }
+
+    // 무릎~머리 높이 캡슐(바닥은 제외)과 겹치는 콜라이더. 정보 패널과 표시 기둥은 뺀다.
+    static Collider[] Overlaps(EquipmentMarker m, Vector3 p, float radius) =>
+        Physics.OverlapCapsule(p + Vector3.up * (0.4f + radius), p + Vector3.up * (1.8f - radius), radius, ~0, QueryTriggerInteraction.Ignore)
+            .Where(c => c.enabled && c.GetComponentInParent<Canvas>(true) == null && !UnderPoint(m, c.transform)).ToArray();
+
+
+    static System.Collections.Generic.List<Collider> AddTempMeshColliders()
+    {
+        var temp = new System.Collections.Generic.List<Collider>();
+        foreach (var mf in Object.FindObjectsByType<MeshFilter>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (mf.sharedMesh == null || mf.GetComponent<Collider>() != null) continue;
+            if (mf.GetComponentInParent<Canvas>(true) != null) continue;
+            temp.Add(mf.gameObject.AddComponent<MeshCollider>());
+        }
+        Physics.SyncTransforms();
+        return temp;
+    }
 }

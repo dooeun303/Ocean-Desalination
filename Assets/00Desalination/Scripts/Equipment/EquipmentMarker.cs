@@ -220,12 +220,85 @@ public class EquipmentMarker : MonoBehaviour
 
         if (_outline != null) { _outline.enabled = false; _outline = null; }
         if (_ring != null) { Destroy(_ring.gameObject); _ring = null; }
+        if (_hovered) SetHoverOutline(true); // 아직 레이가 닿아 있으면 호버 외곽선으로 돌아간다
         HideInfo();
     }
 
     void OnDisable()
     {
         if (_highlighting) StopHighlight();
+        UnhookHover();
+    }
+
+    // ── 호버 외곽선 ──
+    // 2026-10-27 "설비를 포인트하고 있을 때(누르기 전) 어느 설비를 누르는지 알아야 한다" - 컨트롤러 레이가
+    // 설비에 닿아 있는 동안 얇은 흰 외곽선. 시선(Gaze) 인터랙터는 빼서 쳐다보기만 해도 켜지지 않게 한다.
+    // 외곽선 컴포넌트는 Highlight()와 같은 것을 쓰고, 하이라이트 중이면 그쪽 색·펄스를 그대로 둔다.
+    static readonly Color HoverColor = new Color(1f, 1f, 1f, 0.9f);
+    const float HoverOutlineWidth = 4f;
+    XRBaseInteractable _hoverSource;
+    bool _hovered;
+
+    void OnEnable()
+    {
+        _hoverSource = GetComponent<XRBaseInteractable>();
+        if (_hoverSource == null && highlightTarget != null) _hoverSource = highlightTarget.GetComponent<XRBaseInteractable>();
+        if (_hoverSource == null) return;
+        _hoverSource.hoverEntered.AddListener(OnHoverChanged);
+        _hoverSource.hoverExited.AddListener(OnHoverChanged);
+    }
+
+    void UnhookHover()
+    {
+        if (_hoverSource == null) return;
+        _hoverSource.hoverEntered.RemoveListener(OnHoverChanged);
+        _hoverSource.hoverExited.RemoveListener(OnHoverChanged);
+        SetHoverOutline(false);
+    }
+
+    // XRI 레이는 레이에 걸린 설비를 전부 호버 상태로 만들고, 선택은 맨 앞(유효 타깃 1순위) 하나만 한다.
+    // 2026-10-27 Quest: 뒤 설비에 외곽선이 떴는데 누르니 앞 설비 패널이 떴다 → 레이마다 1순위 타깃에만 외곽선.
+    // 1순위는 호버 이벤트 없이도 바뀌므로(레이를 조금 움직여 앞 설비가 끼어듦) 호버 중엔 매 프레임 다시 본다.
+    readonly List<IXRInteractable> _targets = new List<IXRInteractable>();
+
+    void OnHoverChanged(BaseInteractionEventArgs _) => RefreshHover();
+
+    void Update()
+    {
+        if (_hoverSource != null && (_hovered || _hoverSource.isHovered)) RefreshHover();
+    }
+
+    void RefreshHover()
+    {
+        bool front = false;
+        foreach (var i in _hoverSource.interactorsHovering)
+        {
+            if (i is XRGazeInteractor || !(i is XRBaseInteractor interactor)) continue;
+            _targets.Clear();
+            interactor.GetValidTargets(_targets);
+            if (_targets.Count > 0 && ReferenceEquals(_targets[0], _hoverSource)) { front = true; break; }
+        }
+        if (front != _hovered) SetHoverOutline(front);
+    }
+
+    void SetHoverOutline(bool on)
+    {
+        _hovered = on;
+        if (_highlighting || outlineWidth <= 0f) return; // 하이라이트 외곽선이 우선
+        Transform root = highlightTarget != null ? highlightTarget : transform;
+        var outline = root.GetComponent<Outline>();
+        if (on)
+        {
+            if (outline == null) outline = root.gameObject.AddComponent<Outline>();
+            outline.OutlineMode = Outline.Mode.OutlineAll;
+            outline.OutlineColor = HoverColor;
+            outline.OutlineWidth = HoverOutlineWidth;
+            outline.enabled = true;
+        }
+        else if (outline != null)
+        {
+            outline.enabled = false;
+        }
     }
 
     // ── 설비 정보 패널 ──
@@ -396,6 +469,22 @@ public class EquipmentMarker : MonoBehaviour
     }
 
     // RectTransform 피벗이 가운데가 아니어도 "보이는 판의 중심"이 worldCenter에 오게 놓는다.
+    // 2026-10-27 Quest: "설비 클릭 시 설비 패널이 내 시야에 보여야 한다(회전 각도)" - 씬에 놓인 패널은 한 방향으로
+    // 고정이라 옆이나 뒤에서 누르면 비스듬하거나 뒷면이 보였다. 자리·크기는 그대로 두고 패널 중심을 축으로
+    // 수평 방향만 돌려 앞면이 사용자를 향하게 한다(기울기 없음).
+    public void FaceInfoPanelToViewer()
+    {
+        var p = ResolveInfoPanel();
+        var cam = Camera.main;
+        if (p == null || cam == null || !(p.transform is RectTransform rt)) return;
+        var corners = new Vector3[4];
+        rt.GetWorldCorners(corners);
+        Vector3 center = (corners[0] + corners[2]) * 0.5f;
+        Vector3 away = Vector3.ProjectOnPlane(center - cam.transform.position, Vector3.up);
+        if (away.sqrMagnitude < 0.0001f) return;
+        PlaceCentered(rt, center, Quaternion.LookRotation(away.normalized, Vector3.up));
+    }
+
     public static void PlaceCentered(Transform t, Vector3 worldCenter, Quaternion worldRot)
     {
         t.rotation = worldRot;
