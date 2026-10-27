@@ -6,10 +6,10 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/01Scenes/LoginScene.unity
+    path: Assets/Desalination/Scenes/LoginScene.unity
     guid: af144b438a059714b8b02a9e77f44728
   - enabled: 1
-    path: Assets/01Scenes/MR 2.unity
+    path: Assets/Desalination/Scenes/MR 2.unity
     guid: c78b55c356ac6f64dbe4b9bf0ebf064e
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
