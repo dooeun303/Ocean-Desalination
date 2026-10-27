@@ -113,6 +113,20 @@ public static class MrTestBridge
                 it.firstSelectEntered.Invoke(new UnityEngine.XR.Interaction.Toolkit.SelectEnterEventArgs());
                 return "선택 이벤트 실행: " + arg;
             }
+            case "dock": // 도크 버튼 누르기 - 인자: file_share | instruction | tab:Guide|Share|Model|Draw
+            {
+                var dock = UnityEngine.Object.FindFirstObjectByType<MrCallDockPanel>(FindObjectsInactive.Include);
+                if (dock == null) return "MrCallDockPanel 없음";
+                if (arg == "file_share") { Call(dock, "OnOpenFileShareClicked"); return "파일공유 열기"; }
+                if (arg == "instruction") { Call(dock, "OnOpenInstructionDrawingClicked"); return "지시하기 열기"; }
+                if (arg != null && arg.StartsWith("tab:"))
+                {
+                    var view = (MrCallDockView)typeof(MrCallDockPanel).GetField("view", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(dock);
+                    view.SelectTab((MrCallDockView.Tab)Enum.Parse(typeof(MrCallDockView.Tab), arg.Substring(4)));
+                    return "탭: " + arg.Substring(4);
+                }
+                return "알 수 없는 dock 인자: " + arg;
+            }
             case "result_close": // 통화 종료 때 뜨는 "원격지원 결과" 패널 닫기
             {
                 var panel = UnityEngine.Object.FindFirstObjectByType<RemoteSupportResultPanel>(FindObjectsInactive.Include);
